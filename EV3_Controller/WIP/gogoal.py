@@ -39,15 +39,14 @@ class OmniRobot:
             # Get wheel velocities
             wheel_velocities_percent = self.inverse_kinematics(velocity)
             
-            # Update robot state
-            wheel_velocities = self.update_state(wheel_velocities_percent, dt)
+            # wheel_velocities = self.update_state(wheel_velocities_percent, dt)
             self.pat.append(self.position.copy())
             
             print(f"Current position: {self.position}, Target: {target_position}")
             print(f"Current orientation: {self.orientation:.3f}, Target angle: {target_angle:.3f}")
             print(f"Wheel velocities (%): {wheel_velocities_percent}")
             
-            return wheel_velocities
+            return wheel_velocities_percent
         else:
             return np.array([0.0, 0.0, 0.0])
     
@@ -65,6 +64,7 @@ class OmniRobot:
         R = self.robot_radius
         
         # Jacobian matrix for 3-wheel omni robot (120-degree spacing)
+        # From the Paper. Make sure to connect motors in same orientation as paper
         jacobian = (1/self.wheel_radius) * np.array([
             [-math.sin(self.orientation), math.cos(self.orientation), R],
             [-math.sin(self.orientation + 2*math.pi/3), math.cos(self.orientation + 2*math.pi/3), R],
@@ -73,7 +73,6 @@ class OmniRobot:
         
         wheel_velocities = np.dot(jacobian, velocity)
         
-        # Convert to percentage and apply speed limits
         wheel_velocities_percent = (wheel_velocities / self.max_wheel_speed) * 100
         
         # Scale down if any wheel exceeds 100%
@@ -82,7 +81,7 @@ class OmniRobot:
             wheel_velocities_percent = wheel_velocities_percent * (100 / max_percent)
             
         return wheel_velocities_percent
-
+    # Required for Sim
     def update_state(self, wheel_velocities_percent, dt):
         """Update robot position and orientation based on wheel velocities"""
         # Convert percentage back to actual wheel velocities
@@ -103,7 +102,7 @@ class OmniRobot:
         # self.orientation = self.normalize_angle(self.orientation)
         
         return wheel_velocities
-    
+    # Required for Sim
     def forward_kinematics(self, wheel_velocities):
         """Convert wheel velocities to robot velocity in local frame"""
         w1, w2, w3 = wheel_velocities
@@ -132,7 +131,7 @@ class OmniRobot:
             [math.sin(self.orientation), math.cos(self.orientation)]
         ])
         return rotation_matrix.dot(local_vector)
-
+    # For simulation
     def plot_path(self):
         """Plot the robot's path"""
         if len(self.pat) > 1:
