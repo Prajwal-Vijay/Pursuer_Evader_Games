@@ -125,29 +125,29 @@ class EV3GotogoalNode(Node):
 # Global reference to node for signal handler
 global_node = None
 
-def custom_handler(sig, frame):
-    """Signal handler for clean shutdown"""
-    global global_node
-    print('\nReceived interrupt signal. Shutting down...')
+# def custom_handler(sig, frame):
+#     """Signal handler for clean shutdown"""
+#     global global_node
+#     print('\nReceived interrupt signal. Shutting down...')
     
-    if global_node is not None:
-        global_node.shutdown_handler()
+#     if global_node is not None:
+#         global_node.shutdown_handler()
     
-    # Alternative method to stop motors if node method fails
-    try:
-        rclpy.init()
-        temp_node = Node("emergency_stop")
-        pub = temp_node.create_publisher(Float32MultiArray, 'motor_commands', 10)
-        msg = Float32MultiArray()
-        msg.data = [0.0, 0.0, 0.0]
-        pub.publish(msg)
-        rclpy.spin_once(temp_node, timeout_sec=0.1)
-        temp_node.destroy_node()
-        rclpy.shutdown()
-    except:
-        pass
+#     # Alternative method to stop motors if node method fails
+#     try:
+#         rclpy.init()
+#         temp_node = Node("emergency_stop")
+#         pub = temp_node.create_publisher(Float32MultiArray, 'motor_commands', 10)
+#         msg = Float32MultiArray()
+#         msg.data = [0.0, 0.0, 0.0]
+#         pub.publish(msg)
+#         rclpy.spin_once(temp_node, timeout_sec=0.1)
+#         temp_node.destroy_node()
+#         rclpy.shutdown()
+#     except:
+#         pass
     
-    sys.exit(0)
+#     sys.exit(0)
 
 def main(args=None):
     global global_node
