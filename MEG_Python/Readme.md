@@ -1,1 +1,1 @@
-This is a python implementation of the following repo [MEG](https://github.com/abinashagasti/Multiplayer_Reach_Avoid/tree/master/MEG)
+This is a python implementation of the following repo [MEG](https://github.com/abinashagasti/Multiplayer_Reach_Avoid/tree/master/MEG). There is also documentation for it.
