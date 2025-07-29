@@ -22,15 +22,12 @@ class EV3GotogoalNode(Node):
         self.yaw = None
         self.pose_received = False
         
-        # Create the robot instance once
         self.robot = None
         
-        # Publishers and subscribers
         self.pursuer_pose_subscriber = self.create_subscription(
             PoseStamped, 'pursuer0/pose', self.pursuer_callback, 10)
         self.publisher = self.create_publisher(Float32MultiArray, 'motor_commands', 10)
         
-        # Initialize command values
         self.val = [0.0, 0.0, 0.0]
         
         # Timer for publishing commands (reduced frequency for stability)
@@ -41,11 +38,9 @@ class EV3GotogoalNode(Node):
     def pursuer_callback(self, msg):
         """Callback function to handle pose updates"""
         try:
-            # Extract position
             self.x = msg.pose.position.x
             self.y = msg.pose.position.y
             
-            # Extract quaternion
             q_x = msg.pose.orientation.x
             q_y = msg.pose.orientation.y
             q_z = msg.pose.orientation.z
@@ -61,7 +56,6 @@ class EV3GotogoalNode(Node):
             distance_to_goal = np.linalg.norm(np.array([self.x - self.goal_x, self.y - self.goal_y]))
             
             if distance_to_goal > 0.05:  # If not at goal
-                # Create/update robot instance
                 if self.robot is None:
                     self.robot = gogoal.OmniRobot(np.array([self.x, self.y]), self.yaw)
                 else:
