@@ -1,1 +1,1 @@
-This is a python implementation of the following repo [MEG](https://github.com/abinashagasti/Multiplayer_Reach_Avoid/tree/master/MEG). I have also documented it here.
+This is a python implementation of the following repo [MEG](https://github.com/abinashagasti/Multiplayer_Reach_Avoid/tree/master/MEG). I have also documented it [here]([url](https://github.com/Prajwal-Vijay/Pursuer_Evader_Games/blob/main/MEG_Python/MEGDocumentation.pdf)).
