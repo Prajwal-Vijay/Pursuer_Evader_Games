@@ -186,10 +186,10 @@ class Environment:
             done = self.step(objective_function)
 
             # Update plot
-            pursuer_plot.set_data(self.pursuer.position[0, 0], self.pursuer.position[1, 0])
+            pursuer_plot.set_data([self.pursuer.position[0, 0]], [self.pursuer.position[1, 0]])
             for i, evader in enumerate(self.evaders):
                 if not self.captured_evaders[i]:
-                    evader_plots[i].set_data(evader.position[0, 0], evader.position[1, 0])
+                    evader_plots[i].set_data([evader.position[0, 0]], [evader.position[1, 0]])
 
             # Update trajectory lines
             pursuer_x = [p[0, 0] for p in pursuer_positions_traj]
@@ -204,7 +204,7 @@ class Environment:
             ax.relim()
             ax.autoscale_view()
 
-            plt.pause(0.0001)
+            plt.pause(0.00000000000001)
             t += 1
             if t % 100 == 0:
                 print(f"Step {t}")
