@@ -157,7 +157,7 @@ def main(args=None):
         global_node = EV3GotogoalNode(goal_x=goal_x, goal_y=goal_y)
         
         # Set up signal handler
-        signal.signal(signal.SIGINT, custom_handler)
+        # signal.signal(signal.SIGINT, custom_handler)
         
         # Spin the node
         rclpy.spin(global_node)

@@ -1,21 +1,40 @@
+"""
+EV3 Motion Capture ROS2 Node.
+
+This module connects to the 8 Camera Optitrack motion capture system and publishes the positions and orientations
+of pursuer and evader robots as ROS2 PoseStamped messages.
+"""
+
 import motioncapture
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from std_msgs.msg import Header
 import math
+
 class EV3_MocapNode(Node):
+    """
+    ROS2 Node for interfacing with a motion capture system and publishing robot poses.
+
+    Publishes PoseStamped messages for pursuer0, pursuer1, and evader based on mocap data.
+    """
     def __init__(self):
+        """
+        Initialize the EV3_MocapNode, set up publishers and connect to the motion capture system.
+        """
         super().__init__('ev3_mocap')
-        self.pursuer_publisher = self.create_publisher(PoseStamped, "pursuer0/pose", 10)
-        self.evader1_publisher = self.create_publisher(PoseStamped, "pursuer1/pose", 10)
-        self.evader2_publisher = self.create_publisher(PoseStamped, "evader/pose", 10)
+        self.pursuer0_publisher = self.create_publisher(PoseStamped, "pursuer0/pose", 10)
+        self.puruser1_publisher = self.create_publisher(PoseStamped, "pursuer1/pose", 10)
+        self.evader_publisher = self.create_publisher(PoseStamped, "evader/pose", 10)
 
         timer_period = 0.1 # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.mc = motioncapture.connect('vrpn', {"hostname":"192.168.43.17"})
 
     def timer_callback(self):
+        """
+        Timer callback to fetch mocap data and publish PoseStamped messages for each tracked robot.
+        """
         msg = PoseStamped()
         msg.pose.position = Point()
         msg.pose.orientation = Quaternion()
@@ -31,21 +50,25 @@ class EV3_MocapNode(Node):
             msg.pose.orientation.z = obj.rotation.z
             msg.pose.orientation.w = obj.rotation.w
             print("\n"+str(name)+"\n"+str(position))
+            # Based on the name of the object, publish to the respective topic
             if str(name) == "pursuer0":
-                self.pursuer_publisher.publish(msg)
+                self.pursuer0_publisher.publish(msg)
                 self.get_logger().info('Publishing: "{}":"{}" "{}"'.format(msg.header.frame_id, msg.pose.position, msg.pose.orientation))
             elif str(name) == "pursuer1":
-                self.evader1_publisher.publish(msg)
+                self.puruser1_publisher.publish(msg)
                 self.get_logger().info('Publishing: "{}":"{}" "{}"'.format(msg.header.frame_id, msg.pose.position, msg.pose.orientation))
             elif str(name) == "evader":
-                self.evader2_publisher.publish(msg)
+                self.evader_publisher.publish(msg)
                 self.get_logger().info('Publishing: "{}":"{}" "{}"'.format(msg.header.frame_id, msg.pose.position, msg.pose.orientation))
 
             q_w, q_x, q_y, q_z = msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w
             self.yaw = math.atan2(2 * (q_y * q_z + q_w * q_x), q_w**2 - q_x**2 - q_y**2 + q_z**2)
             print("yaw:",self.yaw)
-            
+
 def main(args=None):
+    """
+    Main entry point for the node. Initializes ROS2 and spins the node.
+    """
     rclpy.init(args=args)
     mocap = EV3_MocapNode()
     rclpy.spin(mocap)

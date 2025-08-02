@@ -1,3 +1,9 @@
+"""
+EV3 Motor Control via MQTT.
+
+This script subscribes to MQTT messages and controls three EV3 motors accordingly.
+"""
+
 import paho.mqtt.client as mqtt
 from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C, SpeedPercent
 import time
@@ -7,12 +13,23 @@ import json
 motor_a = LargeMotor(OUTPUT_A)
 motor_b = LargeMotor(OUTPUT_B)
 motor_c = LargeMotor(OUTPUT_C)
-# MQTT Callbacks
+
 def on_connect(client, userdata, flags, rc):
+	"""
+	Callback for when the client receives a CONNECTION ACKNOWLEDGED response from the MQTT server.
+
+	Subscribes to the /motor_commands topic.
+	"""
 	print("Connected to MQTT broker with result code " + str(rc))
 	client.subscribe("/motor_commands")
 
 def on_message(client, userdata, msg):
+	"""
+	Callback for when a PUBLISH message is received from the MQTT server.
+
+	Decodes the message and sets the speeds of the three motors.
+	Note the message must be a JSON string representing a list of three speed percentage values.
+ 	"""
 	json_command = msg.payload.decode()
 	command = json.loads(json_command) # The string message is now converted to a list
 	#print(f"Received command: {command}")
@@ -24,6 +41,7 @@ def on_message(client, userdata, msg):
 		motor_a.off()
 		motor_b.off()
 		motor_c.off()
+
 # MQTT Setup
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.on_connect = on_connect
@@ -39,6 +57,7 @@ try:
 	while True:
 		time.sleep(0.01)
 except KeyboardInterrupt:
+    # Switch off the motors on exit
 	motor_a.off()
 	motor_b.off()
 	motor_c.off()

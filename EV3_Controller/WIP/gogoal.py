@@ -13,6 +13,7 @@ class OmniRobot:
         self.pat = [self.position.copy()]
         
     def move_to_target(self, target_position, max_speed=1.0, dt=0.1):
+        """Move the robot towards a target position by using current position, orientation, and some differential inverse kinematics."""
         target_position = np.array(target_position)
         
         if not np.allclose(self.position, target_position, atol=0.01):
@@ -81,6 +82,7 @@ class OmniRobot:
             wheel_velocities_percent = wheel_velocities_percent * (100 / max_percent)
             
         return wheel_velocities_percent
+    
     # Required for Sim
     def update_state(self, wheel_velocities_percent, dt):
         """Update robot position and orientation based on wheel velocities"""
@@ -102,6 +104,7 @@ class OmniRobot:
         # self.orientation = self.normalize_angle(self.orientation)
         
         return wheel_velocities
+    
     # Required for Sim
     def forward_kinematics(self, wheel_velocities):
         """Convert wheel velocities to robot velocity in local frame"""
@@ -131,6 +134,7 @@ class OmniRobot:
             [math.sin(self.orientation), math.cos(self.orientation)]
         ])
         return rotation_matrix.dot(local_vector)
+    
     # For simulation
     def plot_path(self):
         """Plot the robot's path"""
