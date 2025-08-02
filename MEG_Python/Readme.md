@@ -1,8 +1,8 @@
 # Pursuer-Evader Games (Python Implementation)
 
-A Python implementation of multi-agent pursuit-evasion differential games with geometric control theory and heuristic algorithms. This project simulates strategic interactions between pursuers and evaders in 2D space using advanced mathematical concepts from differential game theory.
+A Python implementation of multi-agent pursuit-evasion differential games with geometric control theory and heuristic algorithms. This project simulates strategic interactions between pursuers and evaders in 2D space using mathematical concepts from differential game theory.
 
-This is a python implementation of the following repo [MEG](https://github.com/abinashagasti/Multiplayer_Reach_Avoid/tree/master/MEG). 
+You can find the matlab implementation in this repo [MEG](https://github.com/abinashagasti/Multiplayer_Reach_Avoid/tree/master/MEG). 
 You can find the documentation for the above repo [here](https://github.com/Prajwal-Vijay/Pursuer_Evader_Games/blob/main/MEG_Python/MEGDocumentation.pdf).
 
 ## Table of Contents
