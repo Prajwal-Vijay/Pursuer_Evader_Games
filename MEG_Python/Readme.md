@@ -10,13 +10,9 @@ You can find the documentation for the above repo [here](https://github.com/Praj
 - [Overview](#overview)
 - [Features](#features)
 - [Mathematical Foundation](#mathematical-foundation)
-- [Installation](#installation)
-- [Usage](#usage)
 - [Project Structure](#project-structure)
 - [Game Mechanics](#game-mechanics)
 - [Algorithms](#algorithms)
-- [Examples](#examples)
-- [Contributing](#contributing)
 - [References](#references)
 
 ## Overview
@@ -143,37 +139,6 @@ Simple but effective approach:
 - Employs Apollonius circle construction
 - Defines escape regions mathematically
 - Advanced geometric path planning
-
-## Examples
-
-### Multi-Evader Scenario
-```python
-# Setup with 3 evaders of different speeds
-n = 3
-u = np.array([0.8, 1.0, 1.2])  # Different evader speeds
-evader_positions = np.array([[2, -3, 4], [1, 2, -1]])
-
-env = Environment.Environment(N, n, v, u, r, pursuer_position, evader_positions, target_position)
-```
-
-### Custom Visualization
-```python
-# Plot current game state
-env.plot_current_positions()
-plt.title('Pursuit-Evasion Game State')
-plt.show()
-```
-
-## Configuration Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `N` | Motion space dimension | 2 |
-| `n` | Number of evaders | 2 |
-| `v` | Pursuer speed | 1.0 |
-| `u` | Evader speeds (array) | [1.0, 1.0] |
-| `r` | Time step size | 0.01 |
-| `capture_tolerance` | Capture radius | 0.05 |
 
 ## Applications
 
