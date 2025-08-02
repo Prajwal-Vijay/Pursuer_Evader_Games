@@ -21,7 +21,7 @@ You can find the documentation for the above repo [here](https://github.com/Praj
 
 ## Overview
 
-This project implements a sophisticated pursuit-evasion game where a single pursuer attempts to capture multiple evaders while the evaders try to reach a target position. The simulation uses principles from:
+This project implements a pursuit-evasion game where a single pursuer attempts to capture multiple evaders while the evaders try to reach a target position. The simulation uses principles from:
 
 - **Differential Game Theory** - Mathematical framework for multi-agent strategic interactions
 - **Barrier Functions** - Determining win conditions and game feasibility
@@ -45,85 +45,26 @@ This project implements a sophisticated pursuit-evasion game where a single purs
 The core mathematical concept determining game feasibility:
 
 ```
-B_ij = ||target - evader_j||² - α_j² * ||target - pursuer||²
+B_j = ||target - evader_j||² - α_j² * ||target - pursuer||²
 ```
 
 Where `α_j = evader_speed_j / pursuer_speed` is the speed ratio.
 
 ### Win Condition
-- If `min(B_ij) ≥ 0` for all evaders, the pursuer has a potential winning strategy
-- If `min(B_ij) < 0`, at least one evader can guarantee escape regardless of pursuer strategy
+- If `min(B_j) ≥ 0` for all evaders, the pursuer has a potential winning strategy
+- If `min(B_j) < 0`, at least one evader can guarantee escape regardless of pursuer strategy
 
 ### Geometric Control
 - **Apollonius Circles**: Define regions where evaders can guarantee escape
 - **Perpendicular Bisector Method**: Used when speed ratios equal 1
 - **Optimal Heading Calculations**: Mathematical optimization for intercept strategies
 
-## Installation
-
-### Prerequisites
-
-```
-Python 3.7+
-numpy
-matplotlib
-scipy
-```
-
-### Setup
-
-1. Clone the repository:
-```bash
-git clone https://github.com/Prajwal-Vijay/Pursuer_Evader_Games.git
-cd Pursuer_Evader_Games/MEG_Python
-```
-
-2. Install dependencies:
-```bash
-pip install numpy matplotlib scipy
-```
-
-## Usage
-
-### Basic Example
-
-```python
-import numpy as np
-import Environment
-
-# Game parameters
-N = 2  # 2D space
-n = 2  # Number of evaders
-v = 1  # Pursuer speed
-u = np.ones(n)  # Evader speeds
-r = 0.01  # Time step
-
-# Initial positions
-pursuer_position = np.array([[-1.7720], [0.3751]])
-evader_positions = np.array([[9.1501, -6.8477], [9.2978, 9.4119]])
-target_position = np.array([[0], [0]])
-
-# Create environment
-env = Environment.Environment(N, n, v, u, r, pursuer_position, evader_positions, target_position)
-
-# Check game feasibility
-win = env.check_initialization(env.evaders, True)
-
-if win:
-    print("Running simulation")
-    win_result, pursuer_traj, evader_traj = env.obtain_trajectories('heuristic')
-    if win_result:
-        print('Pursuer wins!')
-    else:
-        print('Evaders win!')
-else:
-    print('Evaders guaranteed to win - unfair game!')
-```
-
 ### Running the Simulation
 
+https://github.com/user-attachments/assets/24520da7-1df7-47e9-89b9-b8fea71b0586
+
 ```bash
-python main.py
+python3 main.py
 ```
 
 ## Project Structure
@@ -244,16 +185,6 @@ This framework can be applied to various real-world scenarios:
 - **Military**: Tactical planning and engagement strategies
 - **Game Development**: AI behavior for strategy games
 
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## References
 
 1. Isaacs, R. (1965). *Differential Games*. John Wiley & Sons.
@@ -262,27 +193,8 @@ Contributions are welcome! Please follow these guidelines:
 4. Dorothy, M., et al. (2022). One Apollonius circle is enough for many pursuit-evasion games. *Automatica*.
 5. Bhattacharya, S., & Hutchinson, S. (2010). On the existence of Nash equilibrium for a two-player pursuit-evasion game. *International Journal of Robotics Research*.
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## Acknowledgments
 
 - Original MATLAB implementation and mathematical framework
 - Research in differential game theory and geometric control
 - Open-source scientific computing libraries (NumPy, SciPy, Matplotlib)
-
-## Contact
-
-For questions, suggestions, or collaboration opportunities, please open an issue or contact the maintainers.
-
----
-
-*This implementation bridges theoretical differential game concepts with practical multi-agent simulations, providing a powerful tool for research and education in autonomous systems and game theory.*
-=======
-
-Here we solve scenarios of single pursuer vs n evaders.
-## Demo
-https://github.com/user-attachments/assets/24520da7-1df7-47e9-89b9-b8fea71b0586
-
->>>>>>> 2c3b2fe7c8c305c585d365603224539c4d12522a
