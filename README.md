@@ -1,6 +1,7 @@
 # Pursuer_Evader_Games
 
-This repository contains all the code from my Project on Pursuer Evader Differential Games
+This repository contains all the code and simulations developed for my project on Pursuer-Evader Differential Games.
+
 
 ## What is the basic idea behind these games?
 There is a team of evaders, and a team of pursuers. Evaders want to reach a target point or a goal region. 
@@ -9,7 +10,7 @@ It is normally assumed that there is no communication between the evaders and pu
 Many times while strategizing for pursuers, we tend to treat the evaders as independent entities to make it easier.
 
 ## What are the real world applications of these games?
-This framework can be applied to various real-world scenarios:
+These concepts can be applied to:
 
 Robotics: Multi-robot coordination and interception
 Surveillance: Security systems and threat assessment
@@ -19,9 +20,9 @@ Game Development: AI behavior for strategy games
 
 ## Project Structure
 
-EV3_Controller - Created this ROS based pipeline to integrate the 8 Camera Optitrack System(for live orientation and positioning) and the EV3 devices. It is a closed loop system where EV3 bots receive feedback from the positioning system and act upon it.
+EV3_Controller - A ROS-based pipeline integrating an 8-camera OptiTrack system for real-time orientation and localization with LEGO EV3 robots. This closed-loop system provides continuous feedback, allowing robots to adjust their movements based on live positional data.
 
-MEG_Python - We try to come up with strategies for the pursuit team in 1 pursuers vs n evaders, using weighted average of optimal headings and closest evader pursuit methods. The code for python simulation is given.
+MEG_Python - Python simulations of pursuit-evasion scenarios. Explores strategy development for the pursuit team (1 pursuer vs. n evaders), combining weighted averages of optimal headings and nearest-evader pursuit tactics.
 
 ## Current Work
-Looking into Matching based strategies for pursuit team to capture evaders.
+Investigating matching-based strategies for pursuers.
