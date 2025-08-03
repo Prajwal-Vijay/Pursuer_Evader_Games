@@ -20,6 +20,7 @@ Game Development: AI behavior for strategy games
 ## Project Structure
 
 EV3_Controller - Created this ROS based pipeline to integrate the 8 Camera Optitrack System(for live orientation and positioning) and the EV3 devices. It is a closed loop system where EV3 bots receive feedback from the positioning system and act upon it.
+
 MEG_Python - We try to come up with strategies for the pursuit team in 1 pursuers vs n evaders, using weighted average of optimal headings and closest evader pursuit methods. The code for python simulation is given.
 
 ## Current Work
