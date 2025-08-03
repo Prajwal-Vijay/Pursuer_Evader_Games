@@ -13,9 +13,13 @@ Many times while strategizing for pursuers, we tend to treat the evaders as inde
 These concepts can be applied to:
 
 Robotics: Multi-robot coordination and interception
+
 Surveillance: Security systems and threat assessment
+
 Autonomous Vehicles: Traffic management and collision avoidance
+
 Military: Tactical planning and engagement strategies
+
 Game Development: AI behavior for strategy games
 
 ## Project Structure
