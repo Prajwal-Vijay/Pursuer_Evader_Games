@@ -13,7 +13,6 @@ You can find the documentation for the above repo [here](https://github.com/Praj
 - [Project Structure](#project-structure)
 - [Game Mechanics](#game-mechanics)
 - [Algorithms](#algorithms)
-- [References](#references)
 
 ## Overview
 
@@ -140,16 +139,7 @@ Simple but effective approach:
 - Defines escape regions mathematically
 - Advanced geometric path planning
 
-## References
-
-1. Isaacs, R. (1965). *Differential Games*. John Wiley & Sons.
-2. Basar, T., & Olsder, G. J. (1999). *Dynamic Noncooperative Game Theory*. SIAM.
-3. Weintraub, I. E., Pachter, M., & Garcia, E. (2020). An introduction to pursuit-evasion differential games. *American Control Conference*.
-4. Dorothy, M., et al. (2022). One Apollonius circle is enough for many pursuit-evasion games. *Automatica*.
-5. Bhattacharya, S., & Hutchinson, S. (2010). On the existence of Nash equilibrium for a two-player pursuit-evasion game. *International Journal of Robotics Research*.
-
 ## Acknowledgments
 
 - Original MATLAB implementation and mathematical framework
 - Research in differential game theory and geometric control
-- Open-source scientific computing libraries (NumPy, SciPy, Matplotlib)
