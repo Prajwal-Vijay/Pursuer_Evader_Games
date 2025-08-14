@@ -1,3 +1,5 @@
+import heapq
+
 def SuccessiveShortestPath(graph, source, sink):
     """
     Implements the Successive Shortest Path algorithm for finding the minimum cost maximum flow in a flow network.
@@ -16,6 +18,7 @@ def SuccessiveShortestPath(graph, source, sink):
 
     # edges: A list of edges in the graph, where each edge is represented as a tuple (u, v, capacity, cost).
     edges = []
+    # Since the graph is directed, we need to iterate through each node and its neighbors.
     for node in graph:
         for d in graph[node]:
             edges.append((node, d[0], d[1], d[2]))
@@ -28,19 +31,21 @@ def SuccessiveShortestPath(graph, source, sink):
     while True:
         # Find the shortest path in the reduced costs(take into account the potentials)
         dist, prevArc = Dijkstra_wPotentials(residual_graph, edges, potentials, source, sink)
-        
+
         # No shortest path was found
         if prevArc[sink] is None:
             break
-        
-        for x in nodes:
-            potentials[x] = potentials[x] + dist[x]
-        # Add a flow of 1 along the path given by prevArcs and generate a residual graph.
-        augment_flow(prevArc, 1)
-    
-    return flow, cost
 
-def augment_flow(prevArc, flow_value, flow, graph):
+        for x in nodes:
+            if dist[x] < float('inf'):
+                potentials[x] = potentials[x] + dist[x]
+
+        # Add a flow of 1 along the path given by prevArcs and generate a residual graph.
+        augment_flow(prevArc, 1, flow, graph)
+    
+    return flow
+
+def augment_flow(prevArc, flow_value, flow, graph, source, sink):
     """
     Augments the flow along the path given by prevArc.
     
@@ -61,5 +66,58 @@ def augment_flow(prevArc, flow_value, flow, graph):
         # Update the flow on the edge
         flow[prev] += flow_value
         # Update the residual graph
+        
         graph[prev[0]][prev[1]] -= flow_value
         current = prev[0]
+
+def Dijkstra_wPotentials(residual_graph, edges, potentials, source, sink):
+    # Implements Dijkstra's algorithm with potentials to find the shortest path in a residual graph.
+    nodes = list(residual_graph.keys())
+    dist = dict()
+    prevArc = dict()
+    for node in nodes:
+        dist[node] = float('inf')
+        prevArc[node] = None
+    dist[source] = 0
+    Q = []
+    visited = set()
+    heapq.heappush(Q, (source, 0)) # Only has a minimum heap implementation
+    
+    while len(Q) > 0:
+        (u, du) = heapq.heappop()
+
+        if du > dist[u]:
+            continue
+        
+        if u in visited:
+            continue
+        visited.add(u)
+
+        if u == sink:
+            break
+        
+        for v, capacity, cost in residual_graph[u]:
+            if capacity <= 0:
+                continue
+            reducedCost = cost + potentials[u] - potentials[v]
+            if dist[u] + reducedCost < dist[v]:
+                dist[v] = dist[u] + reducedCost
+                prevArc[v] = (u, v)
+                for i in range(len(Q)):
+                    if Q[i][0] == v:
+                        Q[i][1] = dist[v]
+                        break
+                else:
+                    heapq.heappush(Q, (v, dist[v]))
+
+    return dist, prevArc
+
+graph = dict()
+graph["So"] = [("PA", 1, 0), ("PB", 1, 0), ("PC", 1, 0)]
+graph["PA"] = [("EA", 1, 10), ("EB", 1, 20)]
+graph["PB"] = [("EA", 1, 16), ("EB", 1, 12)]
+graph["PC"] = [("EA", 1, 5)]
+graph["EA"] = [("Si", 1, 0)]
+graph["EB"] = [("Si", 1, 0)]
+graph["EC"] = [("Si", 1, 0)]
+SuccessiveShortestPath(graph, "So", "Si")
