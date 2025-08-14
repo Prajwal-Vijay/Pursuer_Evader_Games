@@ -1,4 +1,4 @@
 Here is how the project will proceed.
-1. First come up with an algorithm to incorporate Value function based weighted matching to the paper you have read. (Doing this itself can fetch you a paper!)
+1. First come up with an algorithm to incorporate Value function based weighted matching to the paper you have read.
 2. Use RL to come up with a way to find value functions for n evaders vs 1 pursuer games.
 3. Once you have all this, try to find matching for m pursuers vs n evaders with m < n. The current paper, does not even look at this case, or it simply assumes they cannot be caught. See if its possible to do that.
