@@ -25,7 +25,7 @@ This project implements a pursuit-evasion game where a single pursuer attempts t
 
 ## Features
 
-- **Multi-Agent Simulation**: Support for multiple evaders with heterogeneous capabilities
+- **Multi-Agent Simulation**: Support for multiple evaders with complete independence from one another
 - **Advanced Game Theory**: Implementation of barrier functions and win condition analysis
 - **Geometric Strategies**: Apollonius circle-based escape strategies for evaders
 - **Heuristic Algorithms**: Intelligent pursuer strategies including:
@@ -76,10 +76,10 @@ MEG_Python/
 ### Core Classes
 
 #### Environment
-- Manages game state and agent interactions
+- Manages the game state and agent interactions
 - Handles barrier function calculations
 - Controls simulation stepping and termination
-- Provides visualization capabilities
+- Provides visualization
 
 #### Pursuer
 - Implements multiple pursuit strategies
@@ -98,7 +98,6 @@ MEG_Python/
 ### Initialization Phase
 1. **Barrier Calculation**: Compute barrier values for all evaders
 2. **Feasibility Check**: Determine if pursuer has winning potential
-3. **Strategy Selection**: Choose appropriate algorithms based on game state
 
 ### Simulation Loop
 1. **Position Updates**: Move all agents according to their strategies
@@ -119,7 +118,6 @@ MEG_Python/
 Uses weighted average of optimal headings toward all evaders:
 - Calculates optimal intercept angle for each evader
 - Weights decisions based on capture difficulty
-- Provides robust multi-evader handling
 
 #### Closest Evader Strategy
 Simple but effective approach:
@@ -137,7 +135,6 @@ Simple but effective approach:
 #### Unequal Speed Ratio (α < 1)
 - Employs Apollonius circle construction
 - Defines escape regions mathematically
-- Advanced geometric path planning
 
 ## Acknowledgments
 
