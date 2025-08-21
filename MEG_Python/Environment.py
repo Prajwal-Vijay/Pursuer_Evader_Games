@@ -121,7 +121,7 @@ class Environment:
         # This is the complex mathematics function that calculates pursuer velocity
         pursuer_velocity, _ = self.pursuer.heading_velocity(evader_positions, self.target_position, self.timestep, win, objective_function)
         evader_velocities = self.return_evader_velocities(self.evaders)
-
+        # Update positions
         self.pursuer.update_pos(self.pursuer.position + self.timestep*pursuer_velocity)
         for i, evader in enumerate(self.evaders):
             if not self.captured_evaders[i]:
@@ -216,9 +216,8 @@ class Environment:
         win = np.all(self.captured_evaders)
         return win, pursuer_positions_traj, evader_positions_traj
 
-
+    """ NOT BEING USED
     def plot_trajectories(self, pursuer_positions_traj, evader_positions_traj):
-        """Plot trajectories"""
         plt.figure(figsize=(12, 10))
         
         # Plot pursuer trajectory
@@ -244,3 +243,4 @@ class Environment:
         plt.axis('equal')
         plt.title('Pursuit-Evasion Game Trajectories')
         plt.show()
+    """
