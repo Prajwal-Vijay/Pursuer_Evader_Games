@@ -15,14 +15,19 @@ def main():
     plt.close('all')
     N=1 # Number of pursuers
     M=1 # Number of evaders
-
-
-
-    pursuer_position = np.array([[-1.7720],[0.3751]])
-    evader_positions = np.array([[9.1501, -6.8477], [9.2978, 9.4119]])
-    target_position = np.array([[0], [0]])
-    env = Environment.Environment(N, n, v, u, r, pursuer_position, evader_positions, target_position)
-    win = env.check_initialization(env.evaders, True)
+    t = 0.01 # Time step
+    pursuer_positions = np.array([[-1.7720],[0.3751],[0.8761]])
+    evader_positions = np.array([[9.1501, -6.8477, 9.2978]])
+    pursuer_speeds = np.array([1.5])
+    evader_speeds = np.array([1])
+    pursuers = []
+    evaders = []
+    for i in range(M):
+        evaders.append(Evader.Evader(evader_positions[i], evader_speeds[i], i))
+    for i in range(N):
+        pursuers.append(Pursuer.Pursuer(pursuer_positions[i], pursuer_speeds[i], i))
+    env = Environment.Environment(N, M, t, pursuers, evaders)
+    win = env.check_initialization(True)
     env.plot_current_positions()
     # We are trying to avoid the condition B_ij >= 0 and alpha_ij >= 1, if this happens
     # we will not even run the simulation, because the evaders will endup winning irrespective of how

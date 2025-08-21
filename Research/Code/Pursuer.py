@@ -12,6 +12,7 @@ class Pursuer:
         self.speed = speed
         self.index = index
         self.name = f"pursuer{index}"
+        self.capture_radius = 0.1
     
     def update_pos(self, position):
         """Updates position"""
