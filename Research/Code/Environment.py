@@ -33,6 +33,16 @@ class Environment:
                 if verbose:
                     print(f"Evader {evader.index} is not in the play region at initialization.")
                 return False
+        """ 
+            When the intersection of evasion space and the goal region is empty, we will have no point in the goal that the evaders can
+            reach before getting caught by the pursuers. Paper defines interception point, only in these cases. So we will create
+            a matrix of [f_ij(x)], for all the pairs of (evaders) vs (pursuer subcoalitions). Then use pycvx or some optimization problem to figure
+            out whether, the min z, is lying below the plane or above the plane z = 0.
+            Do we really have to calculate for all the coalitions now itself, or can we consider them seperately and calculate? No we need to include all the 
+            pursuers coalitions and try to calculate, because it may happen individually the evader cannot be caught, but as a group it can be.
+        """
+        
+
         return True
 
     def plot_current_positions(self):
