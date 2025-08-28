@@ -32,6 +32,7 @@ def main():
     # We are trying to avoid the condition B_ij >= 0 and alpha_ij >= 1, if this happens
     # we will not even run the simulation, because the evaders will endup winning irrespective of how
     # smartly the pursuers play.
+    
     if win:
         print("Running simulation")
         win_result, pursuer_traj, evader_traj = env.obtain_trajectories('heuristic')
