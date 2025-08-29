@@ -21,20 +21,18 @@ class Environment:
         self.timestep = t  # Time step
         self.pursuers = pursuers  # Assuming a single pursuer for simplicity
         self.evaders = evaders
-        
+        self.active_evaders = evaders
 
-    def check_initialization(self, verbose=False, evaders=None):
-        if not evaders:
-            evaders = self.evaders
+    def check_initialization(self, verbose=False):
         """Check if the initial positions are valid for the simulation"""
         # Check if any evader is already captured or too close to the pursuer
         for pursuer in self.pursuers:
-            for evader in evaders:
+            for evader in self.active_evaders:
                 if np.linalg.norm(pursuer.get_pos() - evader.get_pos()) < pursuer.capture_radius:
                     if verbose:
                         print(f"Evader {evader.index} is too close to the pursuer at initialization.")
                     return False
-        for evader in evaders:
+        for evader in self.active_evaders:
             if evader.get_pos()[2,0] < 0: # Might be some issues with the way I am accessing here.
                 if verbose:
                     print(f"Evader {evader.index} is not in the play region at initialization.")
@@ -48,11 +46,11 @@ class Environment:
             pursuers coalitions and try to calculate, because it may happen individually the evader cannot be caught, but as a group it can be.
         """
         evasion_matrix, coalition_list = self.create_evasion_matrix()
-        for evader_idx, evader in enumerate(evaders):
+        for evader_idx, evader in enumerate(self.active_evaders):
             for coalition in coalition_list:
-                if evasion_matrix[(evader_idx, coalition)] == 1:
+                if evasion_matrix[(evader, coalition)] == 1:
                     # There exists atleast one coalition which can successfully capture the evader.
-                    break 
+                    break
             else:
                 # There exists an evader that always manages to escape!
                 return False
@@ -70,15 +68,14 @@ class Environment:
         # For each evader and each pursuer coalition
         for evader_idx, evader in enumerate(self.evaders):
             for coalition in coalition_list:
-                min_z = self._compute_min_z_in_bes(evader_idx, coalition)
+                min_z = self._compute_min_z_in_bes(evader, coalition)
                 
                 # Set matrix value: 1 if min_z > 0, -1 otherwise
-                evasion_matrix[(evader_idx, coalition)] = 1 if min_z > 0 else -1
+                evasion_matrix[(evader, coalition)] = 1 if min_z > 0 else -1
         return evasion_matrix, coalition_list
 
-    def _compute_min_z_in_bes(self, evader_idx, coalition):
+    def _compute_min_z_in_bes(self, evader, coalition):
         # Uses the boundary of evasion space method as given in the paper.
-        evader = self.evaders[evader_idx]
         x = cp.Variable(3)
         objective = cp.Minimize(x[2])
         constraints = []
@@ -150,11 +147,11 @@ class Environment:
                     return True
                 
         # All active evaders are done, stop game
-        active_evaders = [evader for i, evader in enumerate(self.evaders) if not evader.captured]
-        if not active_evaders:
+        self.active_evaders = [evader for i, evader in enumerate(self.evaders) if not evader.captured]
+        if not self.active_evaders:
             return True
         # Calculate pursuer velocity
-        win = self.check_initialization(False, active_evaders)
+        win = self.check_initialization(False, self.active_evaders)
         # evader_positions = self.return_evader_positions(active_evaders)
         # From Here things get very different
         # YOUR REAL CODE STARTS HERE
@@ -166,14 +163,133 @@ class Environment:
         Step 5: Find interception point for each of these cases.
         Step 6: Send the pursuers and evaders to the required positions
         """
+        # STEP 1
+        value_matrix, points_matrix, coalition_list = self.valueFunctionMatrix()
+        # STEP 2
+        single_coalitions = [coalition for coalition in coalition_list if len(coalition) == 1]
+        graph = dict()
+        graph["So"] = dict()
+        for single_coalition in single_coalitions:
+            graph["So"][single_coalition] = (1, 0)
+        for single_coalition in single_coalitions:
+            for evader in self.active_evaders:
+                if value_matrix[(evader, single_coalition)] != -1:
+                    graph[single_coalition][evader] = (1, value_matrix[(evader, single_coalition)])
+        for evader in self.active_evaders:
+            graph[self.active_evaders]["Si"] = (1, 0)
+        graph["Si"] = dict()
+        flow = minCostMaxFlow_implemented.SuccessiveShortestPath(graph, "So", "Si")
+
+        for start, stop in flow.keys:
+            if start in single_coalitions and stop in self.active_evaders:
+                for pursuer_idx in start:
+                    pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
+                    self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
+                vel = stop.heading_velocity(points_matrix[(stop, start)])
+                stop.update_pos(stop.position+self.timestep*vel)
+        
         
 
-        pursuer_velocity, _ = self.pursuer.heading_velocity(evader_positions, self.target_position, self.timestep, win, objective_function)
         evader_velocities = self.return_evader_velocities(self.evaders)
 
         # Update positions
-        self.pursuer.update_pos(self.pursuer.position + self.timestep*pursuer_velocity)
         for i, evader in enumerate(self.evaders):
             if not self.captured_evaders[i]:
                 evader.update_pos(evader.position+self.timestep * evader_velocities[:,i:i+1])
         return False
+
+    def valueFunctionMatrix(self, max_coalition_size=3):
+        value_matrix = {}
+        optimal_points_matrix = {}
+        coalition_list = []
+        for size in range(1, min(max_coalition_size + 1, len(self.pursuers) + 1)):
+            for coalition in combinations(range(len(self.pursuers)), size):
+                coalition_list.append(coalition) # coalition is not a list of pursuers, it is a list of numbers(indices)!!
+
+        for evader_idx, evader in enumerate(self.active_evaders):
+            for coalition in coalition_list:
+                try:
+                    value, optimal_point = self._solve_value_function_cvxpy(coalition, evader)
+                    value_matrix[(evader, coalition)] = value
+                    optimal_points_matrix[(evader, coalition)] = optimal_point
+                except Exception as e:
+                    print(f"Failed to compute value for coalition {coalition}, evader {evader}")
+                    # value, point = self._fallback_value_function(coalition, evader)
+                    value_matrix[(evader, coalition)] = -1
+                    optimal_points_matrix[(evader, coalition)] = -1
+
+        return value_matrix, optimal_points_matrix, coalition_list
+    
+    def _solve_value_function_cvxpy(self, coalition, evader):
+        evader_pos = np.array(evader.position)
+        x = cp.Variable(2) # x,y position
+        z = cp.Variable() # The variable to be minimized
+        constraint_terms = []
+        # Constraints List
+        constraints = []
+        for pursuer_idx in coalition:
+            pursuer = self.pursuers[pursuer_idx]
+            pursuer_pos = np.array(pursuer.position)
+            alpha_ij = float(pursuer.speed) / float(evader.speed)
+            dist_to_pursuer_sq = cp.sum_squares(x-pursuer_pos)
+            dist_to_evader_sq = cp.sum_squares(x-evader_pos)
+            f_ij = dist_to_pursuer_sq - alpha_ij*dist_to_evader_sq - pursuer.capture_radius**2
+            constraints.append(f_ij >= 0)
+            constraint_terms.append(f_ij)
+            constraints.append(f_ij >= -z)
+
+        game_bounds = 1000 # A reasonable bound on the game
+        constraints.append(cp.norm(x, 'inf') <= game_bounds)
+
+        objective = cp.Minimize(z)
+        problem = cp.Problem(objective, constraints)
+
+        try:
+            problem.solve(solver=cp.ECOS, verbose=False)
+
+            if problem.status in [cp.OPTIMAL, cp.OPTIMAL_INACCURATE]:
+                optimal_value = float(problem.value) if problem.value is not None else 0.0
+                optimal_point = np.append(x.value.copy(), z.value.copy()) if x.value is not None else evader_pos.copy()
+                return optimal_value, optimal_point
+            else:
+                print(f"Optimization status: {problem.status}")
+            
+        except Exception as e:
+            print(f"CVXPY solver failed: {e}")
+
+    # Some nonsense Function
+    """
+    def _fallback_value_function(self, coalition, evader):
+        Fallback computation when CVXPY optimization fails.
+        Uses geometric heuristic based on distances and speed ratios.
+        
+        Returns:
+            tuple: (value, optimal_point)
+        evader_pos = np.array(evader.position)
+        
+        min_advantage = float('inf')
+        best_point = evader_pos.copy()
+        
+        for pursuer_idx in coalition:
+            pursuer = self.pursuers[pursuer_idx]
+            pursuer_pos = np.array(pursuer.position)
+            
+            # Distance between pursuer and evader
+            distance = np.linalg.norm(pursuer_pos - evader_pos)
+            
+            # Speed advantage
+            alpha_ij = float(pursuer.speed) / float(evader.speed)
+            
+            # Simple heuristic for capture advantage
+            capture_radius = pursuer.capture_radius
+            advantage = distance - alpha_ij * capture_radius
+            
+            if advantage < min_advantage:
+                min_advantage = advantage
+                # Optimal point is approximately midway between pursuer and evader
+                # weighted by speed ratio
+                weight = alpha_ij / (1.0 + alpha_ij)
+                best_point = pursuer_pos + weight * (evader_pos - pursuer_pos)
+        
+        return min_advantage, best_point
+    """

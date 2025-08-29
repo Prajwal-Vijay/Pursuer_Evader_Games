@@ -17,7 +17,7 @@ class Evader:
         self.index = index
         self.name = f"evader{index}"
         self.captured = False
-    
+
     def update_pos(self, position):
         """Updates position"""
         position = np.array(position)

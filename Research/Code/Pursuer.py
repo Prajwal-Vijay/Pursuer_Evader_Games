@@ -31,7 +31,7 @@ class Pursuer:
     def heading_velocity(self, intercept_position):
         """Calculate heading velocity based on intercept position"""
         """Remember the velocity is a vector in 3D space."""
-        intercept_position = np.array(intercept_position).reshape(-1, 1)
+        intercept_position = intercept_position.reshape(-1, 1) if np.array(intercept_position).ndim == 1 else np.array(intercept_position)
         velocity = intercept_position - self.position
         velocity_norm = np.linalg.norm(velocity)
         if velocity_norm > 0:
