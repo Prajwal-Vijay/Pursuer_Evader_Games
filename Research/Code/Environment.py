@@ -166,6 +166,7 @@ class Environment:
         # STEP 1
         value_matrix, points_matrix, coalition_list = self.valueFunctionMatrix()
         # STEP 2
+        # Coalitions of size 1
         single_coalitions = [coalition for coalition in coalition_list if len(coalition) == 1]
         graph = dict()
         graph["So"] = dict()
@@ -180,7 +181,13 @@ class Environment:
         graph["Si"] = dict()
         flow = minCostMaxFlow_implemented.SuccessiveShortestPath(graph, "So", "Si")
 
+        matched_pursuers = []
+        matched_evaders = []
         for start, stop in flow.keys:
+            if start[0] not in matched_pursuers:
+                matched_pursuers.append(start[0])
+            if stop not in matched_evaders:
+                matched_evaders.append(stop)
             if start in single_coalitions and stop in self.active_evaders:
                 for pursuer_idx in start:
                     pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
@@ -188,9 +195,27 @@ class Environment:
                 vel = stop.heading_velocity(points_matrix[(stop, start)])
                 stop.update_pos(stop.position+self.timestep*vel)
         
-        
+        # Coalitions of size 2 evaluated with swap of size 2
+        dual_coalitions = [coalition for coalition in coalition_list if (len(coalition) == 2 and coalition[0] not in coalition_list and coalition[1] not in coalition_list)]
+        graph_2 = dict()
+        for dual_coalition in dual_coalitions:
+            for evader in self.active_evaders:
+                if value_matrix[(evader, dual_coalition)] != -1 and evader not in matched_evaders:
+                    graph_2[dual_coalition][evader] = (1, value_matrix[(evader, dual_coalition)])
+        flow_2 = localSearchMaximum.localSearchMaximum(graph_2)
 
-        evader_velocities = self.return_evader_velocities(self.evaders)
+        for start, stop in flow_2:
+            if start[0] not in matched_pursuers:
+                matched_pursuers.append(start[0])
+            if start[1] not in matched_pursuers:
+                matched_pursuers.append(start[1])
+            if stop not in matched_evaders:
+                matched_evaders.append(stop)
+            for pursuer_idx in start:
+                pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
+                self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
+            vel = stop.heading_velocity(points_matrix[(stop, start)])
+            stop.update_pos(stop.position+self.timestep*vel)
 
         # Update positions
         for i, evader in enumerate(self.evaders):
