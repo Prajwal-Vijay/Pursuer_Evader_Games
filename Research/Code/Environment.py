@@ -62,7 +62,7 @@ class Environment:
         for size in range(1, min(max_coalition_size + 1, len(self.pursuers) + 1)):
             for coalition in combinations(range(len(self.pursuers)), size):
                 coalition_list.append(coalition)
-        
+
         evasion_matrix = {}
         
         # For each evader and each pursuer coalition
@@ -108,11 +108,10 @@ class Environment:
         xline = np.linspace(-15, 15, 1000)
         yline = np.linspace(-15, 15, 1000)
         ax.plot3D(xline, yline, zline, 'gray')
-
         for i, pursuer in enumerate(self.pursuers):
-            ax.scatter(pursuer.position[0, 0], pursuer.position[1, 0], pursuer.position[2, 0], c='ro', marker='Pursuer {i}')
+            ax.scatter(pursuer.position[0, 0], pursuer.position[1, 0], pursuer.position[2, 0], c='#FF0000', label=f'Pursuer {i}')
         for i, evader in enumerate(self.evaders):
-            plt.plot(evader.position[0, 0], evader.position[1, 0], evader.position[3, 0], c='bo', marker=f'Evader {i}')
+            ax.scatter(evader.position[0, 0], evader.position[1, 0], evader.position[2, 0], c='#0000FF', label=f'Evader {i}')
         
         plt.legend()
         plt.grid()
@@ -127,7 +126,7 @@ class Environment:
                 if np.linalg.norm(pursuer.get_pos() - evader.get_pos()) < pursuer.capture_radius:
                     evader.captured = True
     
-    def step(self, objective_function):
+    def step(self):
         # Executes one step of the simulation at a time
         self.update_termination()
         
@@ -319,7 +318,7 @@ class Environment:
             pursuer_trajectories[i].append(pursuer.get_pos().flatten())
         for i, evader in enumerate(self.evaders):
             evader_trajectories[i].append(evader.get_pos().flatten())
-        
+
         # Colors for different agents
         pursuer_colors = plt.cm.Reds(np.linspace(0.4, 1, len(self.pursuers)))
         evader_colors = plt.cm.Blues(np.linspace(0.4, 1, len(self.evaders)))
@@ -341,7 +340,7 @@ class Environment:
                 ax.set_ylabel('Y Position')
                 ax.set_zlabel('Z Position')
                 ax.set_title(f'Pursuit-Evasion Game - Step {step_count}')
-                
+
                 # Set reasonable axis limits based on current positions
                 all_positions = []
                 for pursuer in self.pursuers:
@@ -349,7 +348,7 @@ class Environment:
                 for evader in self.evaders:
                     if not evader.captured:
                         all_positions.append(evader.get_pos().flatten())
-                
+
                 if all_positions:
                     all_positions = np.array(all_positions)
                     margin = 5
@@ -360,7 +359,7 @@ class Environment:
                     ax.set_xlim(-20, 20)
                     ax.set_ylim(-20, 20)
                     ax.set_zlim(-20, 20)
-                
+
                 # Draw the goal plane (z = 0)
                 xx, yy = np.meshgrid(np.linspace(ax.get_xlim()[0], ax.get_xlim()[1], 10),
                                 np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 10))
@@ -437,7 +436,7 @@ class Environment:
                 plt.pause(animation_speed)
                 
                 # Execute one simulation step
-                game_over = self.step(None)  # objective_function parameter seems unused in your step method
+                game_over = self.step()  # objective_function parameter seems unused in your step method
                 
                 # Store new positions for trajectory plotting
                 for i, pursuer in enumerate(self.pursuers):
@@ -467,10 +466,10 @@ class Environment:
                         print(f"Evaders {captured_evaders} were captured!")
                     
                     break
-        
+
         except KeyboardInterrupt:
             print(f"\nSimulation interrupted at step {step_count}")
-        
+
         finally:
             # Final plot with complete trajectories
             ax.clear()
@@ -478,7 +477,7 @@ class Environment:
             ax.set_ylabel('Y Position')
             ax.set_zlabel('Z Position')
             ax.set_title(f'Final Trajectories - Pursuit-Evasion Game')
-            
+
             # Plot goal plane
             if all_positions:
                 xx, yy = np.meshgrid(np.linspace(ax.get_xlim()[0], ax.get_xlim()[1], 10),
@@ -546,4 +545,3 @@ class Environment:
                 'escaped_evaders': [i for i, e in enumerate(self.evaders) 
                                 if not e.captured and e.get_pos()[2,0] <= 0]
             }
-
