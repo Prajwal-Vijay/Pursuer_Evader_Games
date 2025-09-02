@@ -127,7 +127,6 @@ class Environment:
                 if np.linalg.norm(pursuer.get_pos() - evader.get_pos()) < pursuer.capture_radius:
                     evader.captured = True
     
-
     def step(self, objective_function):
         # Executes one step of the simulation at a time
         self.update_termination()
@@ -194,9 +193,9 @@ class Environment:
                     self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
                 vel = stop.heading_velocity(points_matrix[(stop, start)])
                 stop.update_pos(stop.position+self.timestep*vel)
-        
+
         # Coalitions of size 2 evaluated with swap of size 2
-        dual_coalitions = [coalition for coalition in coalition_list if (len(coalition) == 2 and coalition[0] not in coalition_list and coalition[1] not in coalition_list)]
+        dual_coalitions = [coalition for coalition in coalition_list if (len(coalition) == 2 and coalition[0] not in matched_pursuers and coalition[1] not in matched_pursuers)]
         graph_2 = dict()
         for dual_coalition in dual_coalitions:
             for evader in self.active_evaders:
@@ -217,11 +216,28 @@ class Environment:
             vel = stop.heading_velocity(points_matrix[(stop, start)])
             stop.update_pos(stop.position+self.timestep*vel)
 
-        # Update positions
-        for i, evader in enumerate(self.evaders):
-            if not self.captured_evaders[i]:
-                evader.update_pos(evader.position+self.timestep * evader_velocities[:,i:i+1])
-        return False
+        tripple_coalitions = [coalition for coalition in coalition_list if (len(coalition) == 3 and coalition[0] not in matched_pursuers and coalition[1] not in matched_pursuers and coalition[2] not in matched_pursuers)]
+        graph_3 = dict()
+        for tripple_coalition in tripple_coalitions:
+            for evader in self.active_evaders:
+                if value_matrix[(evader, tripple_coalition)] != -1 and evader not in matched_evaders:
+                    graph_3[dual_coalition][evader] = (1, value_matrix[(evader, tripple_coalition)])
+        flow_3 = localSearchMaximum.localSearchMaximum(graph_3)
+
+        for start, stop in flow_3:
+            if start[0] not in matched_pursuers:
+                matched_pursuers.append(start[0])
+            if start[1] not in matched_pursuers:
+                matched_pursuers.append(start[1])
+            if start[2] not in matched_pursuers:
+                matched_pursuers.append(start[2])
+            if stop not in matched_evaders:
+                matched_evaders.append(stop)
+            for pursuer_idx in start:
+                pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
+                self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
+            vel = stop.heading_velocity(points_matrix[(stop, start)])
+            stop.update_pos(stop.position+self.timestep*vel)
 
     def valueFunctionMatrix(self, max_coalition_size=3):
         value_matrix = {}
@@ -244,7 +260,7 @@ class Environment:
                     optimal_points_matrix[(evader, coalition)] = -1
 
         return value_matrix, optimal_points_matrix, coalition_list
-    
+
     def _solve_value_function_cvxpy(self, coalition, evader):
         evader_pos = np.array(evader.position)
         x = cp.Variable(2) # x,y position
@@ -282,39 +298,252 @@ class Environment:
         except Exception as e:
             print(f"CVXPY solver failed: {e}")
 
-    # Some nonsense Function
-    """
-    def _fallback_value_function(self, coalition, evader):
-        Fallback computation when CVXPY optimization fails.
-        Uses geometric heuristic based on distances and speed ratios.
+    def obtain_trajectories(self, max_steps=10000, animation_speed=0.1):
+        """
+        Run the simulation and display real-time 3D animation with trajectory curves
         
-        Returns:
-            tuple: (value, optimal_point)
-        evader_pos = np.array(evader.position)
+        Args:
+            max_steps (int): Maximum number of simulation steps
+            animation_speed (float): Delay between frames in seconds
+        """
+        plt.ion()  # Turn on interactive mode
+        fig = plt.figure(figsize=(12, 10))
+        ax = fig.add_subplot(111, projection='3d')
         
-        min_advantage = float('inf')
-        best_point = evader_pos.copy()
+        # Initialize trajectory storage
+        pursuer_trajectories = [[] for _ in range(len(self.pursuers))]
+        evader_trajectories = [[] for _ in range(len(self.evaders))]
         
-        for pursuer_idx in coalition:
-            pursuer = self.pursuers[pursuer_idx]
-            pursuer_pos = np.array(pursuer.position)
-            
-            # Distance between pursuer and evader
-            distance = np.linalg.norm(pursuer_pos - evader_pos)
-            
-            # Speed advantage
-            alpha_ij = float(pursuer.speed) / float(evader.speed)
-            
-            # Simple heuristic for capture advantage
-            capture_radius = pursuer.capture_radius
-            advantage = distance - alpha_ij * capture_radius
-            
-            if advantage < min_advantage:
-                min_advantage = advantage
-                # Optimal point is approximately midway between pursuer and evader
-                # weighted by speed ratio
-                weight = alpha_ij / (1.0 + alpha_ij)
-                best_point = pursuer_pos + weight * (evader_pos - pursuer_pos)
+        # Store initial positions
+        for i, pursuer in enumerate(self.pursuers):
+            pursuer_trajectories[i].append(pursuer.get_pos().flatten())
+        for i, evader in enumerate(self.evaders):
+            evader_trajectories[i].append(evader.get_pos().flatten())
         
-        return min_advantage, best_point
-    """
+        # Colors for different agents
+        pursuer_colors = plt.cm.Reds(np.linspace(0.4, 1, len(self.pursuers)))
+        evader_colors = plt.cm.Blues(np.linspace(0.4, 1, len(self.evaders)))
+        
+        step_count = 0
+        game_over = False
+        
+        print("Starting pursuit-evasion simulation...")
+        print("Red = Pursuers, Blue = Evaders")
+        print("Goal: Evaders try to reach z=0 plane, Pursuers try to capture them")
+        
+        try:
+            while step_count < max_steps and not game_over:
+                # Clear the plot
+                ax.clear()
+                
+                # Set up the 3D environment
+                ax.set_xlabel('X Position')
+                ax.set_ylabel('Y Position')
+                ax.set_zlabel('Z Position')
+                ax.set_title(f'Pursuit-Evasion Game - Step {step_count}')
+                
+                # Set reasonable axis limits based on current positions
+                all_positions = []
+                for pursuer in self.pursuers:
+                    all_positions.append(pursuer.get_pos().flatten())
+                for evader in self.evaders:
+                    if not evader.captured:
+                        all_positions.append(evader.get_pos().flatten())
+                
+                if all_positions:
+                    all_positions = np.array(all_positions)
+                    margin = 5
+                    ax.set_xlim(np.min(all_positions[:, 0]) - margin, np.max(all_positions[:, 0]) + margin)
+                    ax.set_ylim(np.min(all_positions[:, 1]) - margin, np.max(all_positions[:, 1]) + margin)
+                    ax.set_zlim(np.min(all_positions[:, 2]) - margin, np.max(all_positions[:, 2]) + margin)
+                else:
+                    ax.set_xlim(-20, 20)
+                    ax.set_ylim(-20, 20)
+                    ax.set_zlim(-20, 20)
+                
+                # Draw the goal plane (z = 0)
+                xx, yy = np.meshgrid(np.linspace(ax.get_xlim()[0], ax.get_xlim()[1], 10),
+                                np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 10))
+                zz = np.zeros_like(xx)
+                ax.plot_surface(xx, yy, zz, alpha=0.2, color='green', label='Goal Plane (z=0)')
+                
+                # Plot pursuer trajectories and current positions
+                for i, pursuer in enumerate(self.pursuers):
+                    if len(pursuer_trajectories[i]) > 1:
+                        traj = np.array(pursuer_trajectories[i])
+                        ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], 
+                            color=pursuer_colors[i], alpha=0.7, linewidth=2,
+                            label=f'Pursuer {i} trajectory' if step_count == 0 else "")
+                    
+                    # Current position
+                    pos = pursuer.get_pos().flatten()
+                    ax.scatter(pos[0], pos[1], pos[2], 
+                            color=pursuer_colors[i], s=100, marker='o',
+                            edgecolors='black', linewidth=2)
+                    
+                    # Capture radius visualization
+                    u = np.linspace(0, 2 * np.pi, 20)
+                    v = np.linspace(0, np.pi, 20)
+                    r = pursuer.capture_radius
+                    x_sphere = pos[0] + r * np.outer(np.cos(u), np.sin(v))
+                    y_sphere = pos[1] + r * np.outer(np.sin(u), np.sin(v))
+                    z_sphere = pos[2] + r * np.outer(np.ones(np.size(u)), np.cos(v))
+                    ax.plot_surface(x_sphere, y_sphere, z_sphere, alpha=0.1, color=pursuer_colors[i])
+                
+                # Plot evader trajectories and current positions
+                for i, evader in enumerate(self.evaders):
+                    if not evader.captured:
+                        if len(evader_trajectories[i]) > 1:
+                            traj = np.array(evader_trajectories[i])
+                            ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], 
+                                color=evader_colors[i], alpha=0.7, linewidth=2,
+                                label=f'Evader {i} trajectory' if step_count == 0 else "")
+                        
+                        # Current position
+                        pos = evader.get_pos().flatten()
+                        ax.scatter(pos[0], pos[1], pos[2], 
+                                color=evader_colors[i], s=100, marker='^',
+                                edgecolors='black', linewidth=2)
+                    else:
+                        # Show captured evaders as faded
+                        if len(evader_trajectories[i]) > 1:
+                            traj = np.array(evader_trajectories[i])
+                            ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], 
+                                color='gray', alpha=0.3, linewidth=1,
+                                linestyle='--')
+                        
+                        pos = evader.get_pos().flatten()
+                        ax.scatter(pos[0], pos[1], pos[2], 
+                                color='gray', s=50, marker='x',
+                                alpha=0.5)
+                
+                # Add legend only on first frame
+                if step_count == 0:
+                    ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1))
+                
+                # Add status text
+                active_evaders_count = len([e for e in self.evaders if not e.captured])
+                captured_evaders_count = len(self.evaders) - active_evaders_count
+                
+                status_text = f"Step: {step_count}\n"
+                status_text += f"Active Evaders: {active_evaders_count}\n"
+                status_text += f"Captured Evaders: {captured_evaders_count}"
+                
+                ax.text2D(0.02, 0.98, status_text, transform=ax.transAxes, 
+                        fontsize=10, verticalalignment='top',
+                        bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+                
+                plt.draw()
+                plt.pause(animation_speed)
+                
+                # Execute one simulation step
+                game_over = self.step(None)  # objective_function parameter seems unused in your step method
+                
+                # Store new positions for trajectory plotting
+                for i, pursuer in enumerate(self.pursuers):
+                    pursuer_trajectories[i].append(pursuer.get_pos().flatten())
+                for i, evader in enumerate(self.evaders):
+                    evader_trajectories[i].append(evader.get_pos().flatten())
+                
+                step_count += 1
+                
+                # Check termination conditions
+                if game_over:
+                    print(f"\nGame ended at step {step_count}")
+                    
+                    # Determine the outcome
+                    escaped_evaders = []
+                    captured_evaders = []
+                    
+                    for i, evader in enumerate(self.evaders):
+                        if evader.captured:
+                            captured_evaders.append(i)
+                        elif evader.get_pos()[2, 0] <= 0:  # Reached goal
+                            escaped_evaders.append(i)
+                    
+                    if escaped_evaders:
+                        print(f"Evaders {escaped_evaders} successfully escaped!")
+                    if captured_evaders:
+                        print(f"Evaders {captured_evaders} were captured!")
+                    
+                    break
+        
+        except KeyboardInterrupt:
+            print(f"\nSimulation interrupted at step {step_count}")
+        
+        finally:
+            # Final plot with complete trajectories
+            ax.clear()
+            ax.set_xlabel('X Position')
+            ax.set_ylabel('Y Position')
+            ax.set_zlabel('Z Position')
+            ax.set_title(f'Final Trajectories - Pursuit-Evasion Game')
+            
+            # Plot goal plane
+            if all_positions:
+                xx, yy = np.meshgrid(np.linspace(ax.get_xlim()[0], ax.get_xlim()[1], 10),
+                                np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 10))
+                zz = np.zeros_like(xx)
+                ax.plot_surface(xx, yy, zz, alpha=0.2, color='green')
+            
+            # Plot final trajectories
+            for i, traj in enumerate(pursuer_trajectories):
+                if len(traj) > 1:
+                    traj = np.array(traj)
+                    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], 
+                        color=pursuer_colors[i], linewidth=3, alpha=0.8,
+                        label=f'Pursuer {i}')
+                    # Mark start and end
+                    ax.scatter(traj[0, 0], traj[0, 1], traj[0, 2], 
+                            color=pursuer_colors[i], s=150, marker='s', 
+                            edgecolors='black', linewidth=2)
+                    ax.scatter(traj[-1, 0], traj[-1, 1], traj[-1, 2], 
+                            color=pursuer_colors[i], s=150, marker='o',
+                            edgecolors='black', linewidth=2)
+            
+            for i, traj in enumerate(evader_trajectories):
+                if len(traj) > 1:
+                    traj = np.array(traj)
+                    color = 'gray' if self.evaders[i].captured else evader_colors[i]
+                    alpha = 0.4 if self.evaders[i].captured else 0.8
+                    linestyle = '--' if self.evaders[i].captured else '-'
+                    
+                    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], 
+                        color=color, linewidth=3, alpha=alpha, linestyle=linestyle,
+                        label=f'Evader {i}' + (' (captured)' if self.evaders[i].captured else ''))
+                    # Mark start and end
+                    ax.scatter(traj[0, 0], traj[0, 1], traj[0, 2], 
+                            color=color, s=150, marker='D', 
+                            edgecolors='black', linewidth=2, alpha=alpha)
+                    ax.scatter(traj[-1, 0], traj[-1, 1], traj[-1, 2], 
+                            color=color, s=150, marker='^',
+                            edgecolors='black', linewidth=2, alpha=alpha)
+            
+            ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1))
+            
+            # Add final statistics
+            final_stats = f"Simulation completed in {step_count} steps\n"
+            final_stats += f"Captured: {len([e for e in self.evaders if e.captured])}\n"
+            final_stats += f"Escaped: {len([e for e in self.evaders if not e.captured and e.get_pos()[2,0] <= 0])}\n"
+            final_stats += f"Still active: {len([e for e in self.evaders if not e.captured and e.get_pos()[2,0] > 0])}"
+            
+            ax.text2D(0.02, 0.02, final_stats, transform=ax.transAxes, 
+                    fontsize=10, verticalalignment='bottom',
+                    bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))
+            
+            plt.ioff()  # Turn off interactive mode
+            plt.show()
+            
+            return {
+                'steps': step_count,
+                'pursuer_trajectories': pursuer_trajectories,
+                'evader_trajectories': evader_trajectories,
+                'final_positions': {
+                    'pursuers': [p.get_pos().flatten() for p in self.pursuers],
+                    'evaders': [e.get_pos().flatten() for e in self.evaders]
+                },
+                'captured_evaders': [i for i, e in enumerate(self.evaders) if e.captured],
+                'escaped_evaders': [i for i, e in enumerate(self.evaders) 
+                                if not e.captured and e.get_pos()[2,0] <= 0]
+            }
+
