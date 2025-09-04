@@ -69,30 +69,32 @@ class Environment:
         for evader_idx, evader in enumerate(self.evaders):
             for coalition in coalition_list:
                 min_z = self._compute_min_z_in_bes(evader, coalition)
-                
+                print(min_z)
                 # Set matrix value: 1 if min_z > 0, -1 otherwise
                 evasion_matrix[(evader, coalition)] = 1 if min_z > 0 else -1
         return evasion_matrix, coalition_list
 
     def _compute_min_z_in_bes(self, evader, coalition):
         # Uses the boundary of evasion space method as given in the paper.
-        x = cp.Variable(3)
-        objective = cp.Minimize(x[2])
+        x = cp.Variable(shape=(3,1))
+        
         constraints = []
         for pursuer_idx in coalition:
             pursuer = self.pursuers[pursuer_idx]
             evader_pos = evader.get_pos()
             pursuer_pos = pursuer.get_pos()
+            print(evader_pos.shape)
             alpha_ij = pursuer.speed/evader.speed
             capture_radius = pursuer.capture_radius
             dist_to_pursuer = cp.norm(x - pursuer_pos, 2)
             dist_to_evader = cp.norm(x - evader_pos, 2)
             constraints.append(dist_to_pursuer - alpha_ij*dist_to_evader >= capture_radius)
+        objective = cp.Minimize(x[2])
         problem = cp.Problem(objective, constraints)
         try:
             problem.solve(solver=cp.ECOS, verbose=False)
             
-            if problem.status == cp.OPTIMAL:
+            if problem.status in [cp.OPTIMAL,cp.OPTIMAL_INACCURATE]:
                 return problem.value
             else:
                 return -np.inf
