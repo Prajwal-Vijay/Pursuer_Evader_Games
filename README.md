@@ -9,6 +9,9 @@ The pursuers want to capture as many evaders as possible before they reach the g
 It is normally assumed that there is no communication between the evaders and purusers.
 Many times while strategizing for pursuers, we tend to treat the evaders as independent entities to make it easier.
 
+## Concepts used-
+Zero Sum Differential Games, Hamilton Jacobi Isaacs Equations, Reachability Analysis, Matching algorithms for bipartite graphs, Value Functions.
+
 ## What are the real world applications of these games?
 These concepts can be applied to:
 
