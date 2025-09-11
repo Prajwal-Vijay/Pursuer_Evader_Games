@@ -102,7 +102,7 @@ def Dijkstra_wPotentials(residual_graph, edges, potentials, source, sink):
         for v, (capacity, cost) in residual_graph[u].items():
             if capacity <= 0:
                 continue
-            reducedCost = cost - potentials[u] + potentials[v] # Donot really understand this part
+            reducedCost = cost - potentials[u] + potentials[v]
             if dist[u] + reducedCost > dist[v]:
                 dist[v] = dist[u] + reducedCost
                 prevArc[v] = (u, v)
