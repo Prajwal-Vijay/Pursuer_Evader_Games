@@ -24,6 +24,11 @@ class Environment:
         self.pursuers = pursuers  # Assuming a single pursuer for simplicity
         self.evaders = evaders
         self.active_evaders = evaders
+        self.evader_str = dict()
+        self.str_evader = dict()
+        for evader in self.evaders:
+            self.evader_str[evader] = str(evader)
+            self.str_evader[str(evader)] = evader
 
     def check_initialization(self, verbose=False):
         """Check if the initial positions are valid for the simulation"""
@@ -163,22 +168,27 @@ class Environment:
         graph = dict()
         graph["So"] = dict()
         for single_coalition in single_coalitions:
-            graph["So"][single_coalition] = (1, 0)
+            graph["So"][str(single_coalition)] = (1, 0)
         for single_coalition in single_coalitions:
-            graph[single_coalition] = dict()
+            graph[str(single_coalition)] = dict()
             for evader in self.active_evaders:
                 if value_matrix[(evader, single_coalition)] != -1:
-                    graph[single_coalition][evader] = (1, value_matrix[(evader, single_coalition)])
+                    graph[str(single_coalition)][self.evader_str[evader]] = (1, value_matrix[(evader, single_coalition)])
         for evader in self.active_evaders:
-            graph[evader] = dict()
-            graph[evader]["Si"] = (1, 0)
+            graph[self.evader_str[evader]] = dict()
+            graph[self.evader_str[evader]]["Si"] = (1, 0)
         graph["Si"] = dict()
+        print(graph)
         flow = minCostMaxFlow_implemented.SuccessiveShortestPath(graph, "So", "Si")
 
         matched_pursuers = []
         matched_evaders = []
-        print(flow.keys())
+        print(flow)
         for start, stop in flow.keys():
+            if start is not "So" and start is not "Si" and start not in self.str_evader.keys():
+                start = eval(start)
+            if stop in self.str_evader.keys():
+                stop = self.str_evader[stop]
             if type(start) is tuple and start[0] not in matched_pursuers:
                 matched_pursuers.append(start[0])
             if stop not in matched_evaders:
@@ -194,12 +204,14 @@ class Environment:
         dual_coalitions = [coalition for coalition in coalition_list if (len(coalition) == 2 and coalition[0] not in matched_pursuers and coalition[1] not in matched_pursuers)]
         graph_2 = dict()
         for dual_coalition in dual_coalitions:
+            graph_2[dual_coalition] = dict()
             for evader in self.active_evaders:
                 if value_matrix[(evader, dual_coalition)] != -1 and evader not in matched_evaders:
                     graph_2[dual_coalition][evader] = (1, value_matrix[(evader, dual_coalition)])
         flow_2 = localSearchMaximum.localSearchMaximum(graph_2, set())
 
         for start, stop in flow_2:
+            start = eval(start)
             if start[0] not in matched_pursuers:
                 matched_pursuers.append(start[0])
             if start[1] not in matched_pursuers:

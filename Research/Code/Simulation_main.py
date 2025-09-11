@@ -13,15 +13,16 @@ import random
 
 def main():
     plt.close('all')
-    N=1 # Number of pursuers
+    N=2 # Number of pursuers
     M=1 # Number of evaders
-    t = 0.1 # Time step
+    t = 0.01 # Time step
     pursuer_positions = np.array([[0, 0.3751, 0.8761]])
     evader_positions = np.array([[-1.7720, 0.3751, 9.2978]])
     pursuer_speeds = np.array([1.5, 1])
     evader_speeds = np.array([1])
     pursuers = []
     evaders = []
+
     for i in range(M):
         evaders.append(Evader.Evader(evader_positions[i], evader_speeds[i], i))
     for i in range(N):
