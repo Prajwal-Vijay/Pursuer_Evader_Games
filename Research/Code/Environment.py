@@ -13,6 +13,8 @@ from itertools import combinations
 from mpl_toolkits import mplot3d
 import minCostMaxFlow_implemented
 import localSearchMaximum
+from scipy.optimize import minimize
+from matplotlib.patches import Patch
 
 class Environment:
     def __init__(self, N, M, t, pursuers, evaders):
@@ -76,31 +78,21 @@ class Environment:
 
     def _compute_min_z_in_bes(self, evader, coalition):
         # Uses the boundary of evasion space method as given in the paper.
-        x = cp.Variable(shape=(3,1))
+        x0 = np.array([0,0,0])
         
         constraints = []
         for pursuer_idx in coalition:
             pursuer = self.pursuers[pursuer_idx]
-            evader_pos = evader.get_pos()
-            pursuer_pos = pursuer.get_pos()
+            evader_pos = np.array(evader.get_pos()).reshape(-1)
+            pursuer_pos = np.array(pursuer.get_pos()).reshape(-1)
             print(evader_pos.shape)
             alpha_ij = pursuer.speed/evader.speed
             capture_radius = pursuer.capture_radius
-            dist_to_pursuer = cp.norm(x - pursuer_pos, 2)
-            dist_to_evader = cp.norm(x - evader_pos, 2)
-            constraints.append(dist_to_pursuer - alpha_ij*dist_to_evader >= capture_radius)
-        objective = cp.Minimize(x[2])
-        problem = cp.Problem(objective, constraints)
-        try:
-            problem.solve(solver=cp.ECOS, verbose=False)
-            
-            if problem.status in [cp.OPTIMAL,cp.OPTIMAL_INACCURATE]:
-                return problem.value
-            else:
-                return -np.inf
-        except:
-            return -np.inf
-        
+            constraints.append({'type':'ineq', 'fun': lambda x: np.linalg.norm(x - pursuer_pos) - alpha_ij * np.linalg.norm(x-evader_pos) - capture_radius})
+        objective = lambda x: x[2]
+        res = minimize(objective, x0, constraints=constraints)
+        return res.x[2]
+    
     def plot_current_positions(self):
         """Plot current positions of pursuers and evaders"""        
         plt.figure()
@@ -151,7 +143,7 @@ class Environment:
         if not self.active_evaders:
             return True
         # Calculate pursuer velocity
-        win = self.check_initialization(False, self.active_evaders)
+        win = self.check_initialization()
         # evader_positions = self.return_evader_positions(active_evaders)
         # From Here things get very different
         # YOUR REAL CODE STARTS HERE
@@ -262,6 +254,11 @@ class Environment:
 
         return value_matrix, optimal_points_matrix, coalition_list
 
+    # def _solve_value_function_scipy(self, coalition, evader):
+    #     evader_pos = np.array(evader.position)
+    #     print(evader_pos.shape)
+    #     init_pos = np.array([0, 0 ,0])
+
     def _solve_value_function_cvxpy(self, coalition, evader):
         evader_pos = np.array(evader.position)
         x = cp.Variable(2) # x,y position
@@ -324,14 +321,14 @@ class Environment:
         # Colors for different agents
         pursuer_colors = plt.cm.Reds(np.linspace(0.4, 1, len(self.pursuers)))
         evader_colors = plt.cm.Blues(np.linspace(0.4, 1, len(self.evaders)))
-        
+
         step_count = 0
         game_over = False
         
         print("Starting pursuit-evasion simulation...")
         print("Red = Pursuers, Blue = Evaders")
         print("Goal: Evaders try to reach z=0 plane, Pursuers try to capture them")
-        
+        all_positions = []
         try:
             while step_count < max_steps and not game_over:
                 # Clear the plot
@@ -344,7 +341,7 @@ class Environment:
                 ax.set_title(f'Pursuit-Evasion Game - Step {step_count}')
 
                 # Set reasonable axis limits based on current positions
-                all_positions = []
+                
                 for pursuer in self.pursuers:
                     all_positions.append(pursuer.get_pos().flatten())
                 for evader in self.evaders:
@@ -361,13 +358,15 @@ class Environment:
                     ax.set_xlim(-20, 20)
                     ax.set_ylim(-20, 20)
                     ax.set_zlim(-20, 20)
-
+                
                 # Draw the goal plane (z = 0)
                 xx, yy = np.meshgrid(np.linspace(ax.get_xlim()[0], ax.get_xlim()[1], 10),
                                 np.linspace(ax.get_ylim()[0], ax.get_ylim()[1], 10))
                 zz = np.zeros_like(xx)
-                ax.plot_surface(xx, yy, zz, alpha=0.2, color='green', label='Goal Plane (z=0)')
-                
+                ax.plot_surface(xx, yy, zz, alpha=0.2, color='green')
+                handles, labels = ax.get_legend_handles_labels()
+                handles.append(Patch(facecolor='green', alpha=0.2, label='Goal Plane (z=0)'))
+
                 # Plot pursuer trajectories and current positions
                 for i, pursuer in enumerate(self.pursuers):
                     if len(pursuer_trajectories[i]) > 1:
@@ -420,7 +419,7 @@ class Environment:
                 
                 # Add legend only on first frame
                 if step_count == 0:
-                    ax.legend(loc='upper right', bbox_to_anchor=(1.15, 1))
+                    ax.legend(handles=handles, labels=labels)
                 
                 # Add status text
                 active_evaders_count = len([e for e in self.evaders if not e.captured])
@@ -501,7 +500,7 @@ class Environment:
                     ax.scatter(traj[-1, 0], traj[-1, 1], traj[-1, 2], 
                             color=pursuer_colors[i], s=150, marker='o',
                             edgecolors='black', linewidth=2)
-            
+
             for i, traj in enumerate(evader_trajectories):
                 if len(traj) > 1:
                     traj = np.array(traj)
@@ -547,3 +546,4 @@ class Environment:
                 'escaped_evaders': [i for i, e in enumerate(self.evaders) 
                                 if not e.captured and e.get_pos()[2,0] <= 0]
             }
+        

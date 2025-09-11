@@ -36,11 +36,8 @@ def main():
     
     if win:
         print("Running simulation")
-        win_result, pursuer_traj, evader_traj = env.obtain_trajectories('heuristic')
-        if win_result:
-            print('Pursuer wins!')
-        else:
-            print('Evaders win!')
+        win_result = env.obtain_trajectories()
+        print(win_result)
     else:
         print('Irrespecitive of how the pursuer plays, evaders end up winning. UNFAIR!')
 
