@@ -13,7 +13,7 @@ from itertools import combinations
 from mpl_toolkits import mplot3d
 import minCostMaxFlow_implemented
 import localSearchMaximum
-from scipy.optimize import minimize
+from scipy.optimize import minimize, Bounds
 from matplotlib.patches import Patch
 
 class Environment:
@@ -29,7 +29,8 @@ class Environment:
         for evader in self.evaders:
             self.evader_str[evader] = str(evader)
             self.str_evader[str(evader)] = evader
-
+        self.count = 0
+    # WORKING FINE
     def check_initialization(self, verbose=False):
         """Check if the initial positions are valid for the simulation"""
         # Check if any evader is already captured or too close to the pursuer
@@ -53,6 +54,7 @@ class Environment:
             pursuers coalitions and try to calculate, because it may happen individually the evader cannot be caught, but as a group it can be.
         """
         evasion_matrix, coalition_list = self.create_evasion_matrix()
+        print(evasion_matrix)
         for evader_idx, evader in enumerate(self.active_evaders):
             for coalition in coalition_list:
                 if evasion_matrix[(evader, coalition)] == 1:
@@ -76,7 +78,6 @@ class Environment:
         for evader_idx, evader in enumerate(self.evaders):
             for coalition in coalition_list:
                 min_z = self._compute_min_z_in_bes(evader, coalition)
-                print(min_z)
                 # Set matrix value: 1 if min_z > 0, -1 otherwise
                 evasion_matrix[(evader, coalition)] = 1 if min_z > 0 else -1
         return evasion_matrix, coalition_list
@@ -84,18 +85,26 @@ class Environment:
     def _compute_min_z_in_bes(self, evader, coalition):
         # Uses the boundary of evasion space method as given in the paper.
         x0 = np.array([0,0,0])
-        
+        # FIXED BUG HERE: Minimization function is supposed to give the minima of their intersection, but it seems to be giving the minima of the last pursuers.
+        # REASON : But Python’s lambda in a loop captures variables by reference, not by value. So by the time minimize uses those lambdas, all of them refer to the last pursuer_pos and evader_pos!
+        def make_constraint(pursuer_pos, evader_pos, alpha_ij, capture_radius):
+            return {
+                'type': 'ineq',
+                'fun': lambda x, p=pursuer_pos, e=evader_pos, a=alpha_ij, r=capture_radius:
+                    np.linalg.norm(x - p) - a * np.linalg.norm(x - e) - r
+            }
+        bounds = Bounds([-100, -100, -np.inf],[+100, +100, +np.inf])
         constraints = []
         for pursuer_idx in coalition:
             pursuer = self.pursuers[pursuer_idx]
             evader_pos = np.array(evader.get_pos()).reshape(-1)
             pursuer_pos = np.array(pursuer.get_pos()).reshape(-1)
-            print(evader_pos.shape)
             alpha_ij = pursuer.speed/evader.speed
             capture_radius = pursuer.capture_radius
-            constraints.append({'type':'ineq', 'fun': lambda x: np.linalg.norm(x - pursuer_pos) - alpha_ij * np.linalg.norm(x-evader_pos) - capture_radius})
+            constraints.append(make_constraint(pursuer_pos, evader_pos, alpha_ij, capture_radius))
         objective = lambda x: x[2]
-        res = minimize(objective, x0, constraints=constraints)
+        res = minimize(objective, x0, constraints=constraints, bounds=bounds, method='SLSQP')
+        print(res.x)
         return res.x[2]
     
     def plot_current_positions(self):
@@ -117,7 +126,7 @@ class Environment:
         plt.show()
         plt.title("Pursuit Evasion Game")
 
-    
+    # DEBUG: The evader is not being caught, but it initialization is such that it can be caught, why is it failing?
     def update_termination(self):
         # Update the captured status of evaders
         for pursuer in self.pursuers:
@@ -142,7 +151,7 @@ class Environment:
                 if (evader.position[2, 0] < 0):
                     print(f'{evader.name} reached the target')
                     return True
-                
+        
         # All active evaders are done, stop game
         self.active_evaders = [evader for i, evader in enumerate(self.evaders) if not evader.captured]
         if not self.active_evaders:
@@ -152,6 +161,8 @@ class Environment:
         # evader_positions = self.return_evader_positions(active_evaders)
         # From Here things get very different
         # YOUR REAL CODE STARTS HERE
+        if not win:
+            print("MATCH GONE")
         """
         Step 1: Compute the Valuefunction for each pair of pursuer coalition and the active evader.
         Step 2: Use the minCostMaxFlow Implementation to get the matching for 1v1 case.
@@ -162,6 +173,8 @@ class Environment:
         """
         # STEP 1
         value_matrix, points_matrix, coalition_list = self.valueFunctionMatrix()
+        print(value_matrix)
+        print(points_matrix)
         # STEP 2
         # Coalitions of size 1
         single_coalitions = [coalition for coalition in coalition_list if len(coalition) == 1]
@@ -178,52 +191,79 @@ class Environment:
             graph[self.evader_str[evader]] = dict()
             graph[self.evader_str[evader]]["Si"] = (1, 0)
         graph["Si"] = dict()
-        print(graph)
         flow = minCostMaxFlow_implemented.SuccessiveShortestPath(graph, "So", "Si")
 
         matched_pursuers = []
         matched_evaders = []
-        print(flow)
-        for start, stop in flow.keys():
-            if start is not "So" and start is not "Si" and start not in self.str_evader.keys():
-                start = eval(start)
-            if stop in self.str_evader.keys():
-                stop = self.str_evader[stop]
-            if type(start) is tuple and start[0] not in matched_pursuers:
-                matched_pursuers.append(start[0])
-            if stop not in matched_evaders:
-                matched_evaders.append(stop)
-            if start in single_coalitions and stop in self.active_evaders:
-                for pursuer_idx in start:
-                    pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
-                    self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
-                vel = stop.heading_velocity(points_matrix[(stop, start)])
-                stop.update_pos(stop.position+self.timestep*vel)
+        # FIXED: HUGE ERROR HERE: See we need to make those combinations of pursuers and evaders move to their respective intercept points, whose flow value is 1 ONLY, the rest should remain still!!
+        for (start, stop), value in flow.items():
+            if value == 1:
+                if start is not "So" and stop is not "Si" and start is not "Si" and start not in self.str_evader.keys():
+                    start = eval(start)
+                if stop in self.str_evader.keys():
+                    stop = self.str_evader[stop]
+                if type(start) is tuple and start[0] not in matched_pursuers:
+                    matched_pursuers.append(int(start[0]))
+                if stop not in matched_evaders:
+                    matched_evaders.append(stop)
+                if start in single_coalitions and stop in self.active_evaders:
+                    for pursuer_idx in start:
+                        pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
+                        self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
+                    if stop in self.active_evaders:
+                        vel = stop.heading_velocity(points_matrix[(stop, start)])
+                        stop.update_pos(stop.position+self.timestep*vel)
 
         # Coalitions of size 2 evaluated with swap of size 2
         dual_coalitions = [coalition for coalition in coalition_list if (len(coalition) == 2 and coalition[0] not in matched_pursuers and coalition[1] not in matched_pursuers)]
+        
+
+        # for dual_coalition in dual_coalitions:
+        #     graph_2[dual_coalition] = dict()
+        #     for evader in self.active_evaders:
+        #         if value_matrix[(evader, dual_coalition)] != -1 and evader not in matched_evaders:
+        #             graph_2[dual_coalition][evader] = (1, value_matrix[(evader, dual_coalition)])
+        # BUG: Local_Search_Maximum is giving empty outputs
+        # flow_2 = localSearchMaximum.localSearchMaximum(graph_2, set())
+        
+        # For now use the min_cost_max_flow implementation itself.
         graph_2 = dict()
+        graph_2["So"] = dict()
         for dual_coalition in dual_coalitions:
-            graph_2[dual_coalition] = dict()
+            graph_2["So"][str(dual_coalition)] = (1, 0)
+        for dual_coalition in dual_coalitions:
+            graph_2[str(dual_coalition)] = dict()
             for evader in self.active_evaders:
-                if value_matrix[(evader, dual_coalition)] != -1 and evader not in matched_evaders:
-                    graph_2[dual_coalition][evader] = (1, value_matrix[(evader, dual_coalition)])
-        flow_2 = localSearchMaximum.localSearchMaximum(graph_2, set())
+                if value_matrix[(evader, dual_coalition)] != -1:
+                    graph_2[str(dual_coalition)][self.evader_str[evader]] = (1, value_matrix[(evader, dual_coalition)])
+        for evader in self.active_evaders:
+            graph_2[self.evader_str[evader]] = dict()
+            graph_2[self.evader_str[evader]]["Si"] = (1, 0)
+        graph_2["Si"] = dict()
 
-        for start, stop in flow_2:
-            start = eval(start)
-            if start[0] not in matched_pursuers:
-                matched_pursuers.append(start[0])
-            if start[1] not in matched_pursuers:
-                matched_pursuers.append(start[1])
-            if stop not in matched_evaders:
-                matched_evaders.append(stop)
-            for pursuer_idx in start:
-                pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
-                self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
-            vel = stop.heading_velocity(points_matrix[(stop, start)])
-            stop.update_pos(stop.position+self.timestep*vel)
+        flow_2 = minCostMaxFlow_implemented.SuccessiveShortestPath(graph_2, "So", "Si")
+        print(flow_2)
+        for (start, stop), value in flow_2.items():
+            if value == 1:
+                if start is not "So" and stop is not "Si" and start is not "Si" and start not in self.str_evader.keys():
+                    start = eval(start)
+                if stop in self.str_evader.keys():
+                    stop = self.str_evader[stop]
+                if type(start) is tuple and start[0] not in matched_pursuers:
+                    matched_pursuers.append(int(start[0]))
+                if type(start) is tuple and start[1] not in matched_pursuers:
+                    matched_pursuers.append(int(start[1]))
+                if stop not in matched_evaders:
+                    matched_evaders.append(stop)
+                if start in dual_coalitions and stop in self.active_evaders:
+                    for pursuer_idx in start:
+                        pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
+                        self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
+                    if stop in self.active_evaders:
+                        vel = stop.heading_velocity(points_matrix[(stop, start)])
+                        stop.update_pos(stop.position+self.timestep*vel)
 
+        print("MATCHED PURSUERS:", matched_pursuers)
         tripple_coalitions = [coalition for coalition in coalition_list if (len(coalition) == 3 and coalition[0] not in matched_pursuers and coalition[1] not in matched_pursuers and coalition[2] not in matched_pursuers)]
         graph_3 = dict()
         for tripple_coalition in tripple_coalitions:
@@ -244,8 +284,9 @@ class Environment:
             for pursuer_idx in start:
                 pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
                 self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
-            vel = stop.heading_velocity(points_matrix[(stop, start)])
-            stop.update_pos(stop.position+self.timestep*vel)
+                if stop in self.active_evaders:
+                    vel = stop.heading_velocity(points_matrix[(stop, start)])
+                    stop.update_pos(stop.position+self.timestep*vel)
         
         return False
     
@@ -279,18 +320,23 @@ class Environment:
     def _solve_value_function_cvxpy(self, coalition, evader):
         # Uses the boundary of evasion space method as given in the paper.
         x0 = np.array([0,0,0])
-        
+        def make_constraint(pursuer_pos, evader_pos, alpha_ij, capture_radius):
+            return {
+                'type': 'ineq',
+                'fun': lambda x, p=pursuer_pos, e=evader_pos, a=alpha_ij, r=capture_radius:
+                    np.linalg.norm(x - p) - a * np.linalg.norm(x - e) - r
+            }
+        bounds = Bounds([-100, -100, -np.inf], [+100, +100, +np.inf])
         constraints = []
         for pursuer_idx in coalition:
             pursuer = self.pursuers[pursuer_idx]
             evader_pos = np.array(evader.get_pos()).reshape(-1)
             pursuer_pos = np.array(pursuer.get_pos()).reshape(-1)
-            print(evader_pos.shape)
             alpha_ij = pursuer.speed/evader.speed
             capture_radius = pursuer.capture_radius
-            constraints.append({'type':'ineq', 'fun': lambda x: np.linalg.norm(x - pursuer_pos) - alpha_ij * np.linalg.norm(x-evader_pos) - capture_radius})
+            constraints.append(make_constraint(pursuer_pos, evader_pos, alpha_ij, capture_radius))
         objective = lambda x: x[2]
-        res = minimize(objective, x0, constraints=constraints)
+        res = minimize(objective, x0, constraints=constraints, bounds=bounds, method='SLSQP')
         return res.x[2], res.x # Returns the minimum distance as well as the point
 
     def obtain_trajectories(self, max_steps=10000, animation_speed=0.1):
@@ -489,7 +535,6 @@ class Environment:
                 
                 step_count += 1
                 print(f"=== Completed step {step_count - 1} ===\n")
-                
                 # Check termination conditions
                 if game_over:
                     print(f"\nGame ended at step {step_count}")

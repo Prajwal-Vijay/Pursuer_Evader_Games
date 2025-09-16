@@ -15,10 +15,10 @@ def main():
     plt.close('all')
     N=2 # Number of pursuers
     M=1 # Number of evaders
-    t = 0.01 # Time step
-    pursuer_positions = np.array([[0, 0.3751, 0.8761]])
-    evader_positions = np.array([[-1.7720, 0.3751, 9.2978]])
-    pursuer_speeds = np.array([1.5, 1])
+    t = 0.1 # Time step
+    pursuer_positions = np.array([[1, 0, 0],[0, 0, 1]])
+    evader_positions = np.array([[1, 0, 1]])
+    pursuer_speeds = np.array([1, 1])
     evader_speeds = np.array([1])
     pursuers = []
     evaders = []

@@ -116,14 +116,12 @@ def Dijkstra_wPotentials(residual_graph, edges, potentials, source, sink):
     return dist, prevArc
 
 graph = dict()
-# graph["So"] = {"PA":(1, 0), "PB":(1, 0), "PC":(1, 0)}
-# graph["PA"] = {"EA":(1, 10), "EB":(1, 20)}
-# graph["PB"] = {"EA":(1, 16), "EB":(1, 12)}
-# graph["PC"] = {"EA":(1, 5), "EC":(1, 8)}
-# graph["EA"] = {"Si":(1, 0)}
-# graph["EB"] = {"Si":(1, 0)}
-# graph["EC"] = {"Si":(1, 0)}
-# graph["Si"] = {}
-# graph = {'So': {(0,): (1, 0), (1,): (1, 0)}, (0,): { "E": (1, 5)}, (1,): {"E": (1, -8)},
-#   "E": {'Si': (1, 0)}, 'Si': {}}
-# print(SuccessiveShortestPath(graph, "So", "Si"))
+graph["So"] = {"PA":(1, 0), "PB":(1, 0), "PC":(1, 0)}
+graph["PA"] = {"EA":(1, 10), "EB":(1, 20)}
+graph["PB"] = {"EA":(1, 16), "EB":(1, 12)}
+graph["PC"] = {"EA":(1, 5), "EC":(1, 8)}
+graph["EA"] = {"Si":(1, 0)}
+graph["EB"] = {"Si":(1, 0)}
+graph["EC"] = {"Si":(1, 0)}
+graph["Si"] = {}
+print(SuccessiveShortestPath(graph, "So", "Si"))
