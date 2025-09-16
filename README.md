@@ -2,14 +2,14 @@
 
 This repository contains all the code and simulations developed for my project on Pursuer-Evader Differential Games.
 
-## Here is a cool demo of the game
-[Screencast from 2025-09-16 16-59-24.webm](https://github.com/user-attachments/assets/9c7978da-fea0-457b-b580-6d2cd0cba3a7)
-
 ## What is the basic idea behind these games?
 There is a team of evaders, and a team of pursuers. Evaders want to reach a target point or a goal region. 
 The pursuers want to capture as many evaders as possible before they reach the goal. We try to come up with optimal strategies for both the teams. 
 It is normally assumed that there is no communication between the evaders and purusers.
 Many times while strategizing for pursuers, we tend to treat the evaders as independent entities to make it easier.
+
+## Here is a cool demo of the game
+[Screencast from 2025-09-16 16-59-24.webm](https://github.com/user-attachments/assets/9c7978da-fea0-457b-b580-6d2cd0cba3a7)
 
 ## Concepts used-
 Zero Sum Differential Games, Hamilton Jacobi Isaacs Equations, Reachability Analysis, Matching algorithms for bipartite graphs, Value Functions.
