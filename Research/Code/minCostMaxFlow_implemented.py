@@ -84,7 +84,6 @@ def Dijkstra_wPotentials(residual_graph, edges, potentials, source, sink):
     Q = []
     visited = set()
     heapq.heappush(Q, (source, 0)) # Only has a minimum heap implementation
-    
     while len(Q) > 0:
         (u, du) = heapq.heappop(Q)
 

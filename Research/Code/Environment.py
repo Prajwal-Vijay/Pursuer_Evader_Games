@@ -30,6 +30,9 @@ class Environment:
             self.evader_str[evader] = str(evader)
             self.str_evader[str(evader)] = evader
         self.count = 0
+        self.flow = None
+        self.flow2 = None
+        self.flow3 = None
     # WORKING FINE
     def check_initialization(self, verbose=False):
         """Check if the initial positions are valid for the simulation"""
@@ -54,7 +57,6 @@ class Environment:
             pursuers coalitions and try to calculate, because it may happen individually the evader cannot be caught, but as a group it can be.
         """
         evasion_matrix, coalition_list = self.create_evasion_matrix()
-        print(evasion_matrix)
         for evader_idx, evader in enumerate(self.active_evaders):
             for coalition in coalition_list:
                 if evasion_matrix[(evader, coalition)] == 1:
@@ -137,7 +139,6 @@ class Environment:
     def step(self):
         # Executes one step of the simulation at a time
         self.update_termination()
-        
         # Check if all the evaders have been captured
         for evader in self.evaders:
             if not evader.captured:
@@ -173,8 +174,7 @@ class Environment:
         """
         # STEP 1
         value_matrix, points_matrix, coalition_list = self.valueFunctionMatrix()
-        print(value_matrix)
-        print(points_matrix)
+        print("VALUE MATRIX:",value_matrix)
         # STEP 2
         # Coalitions of size 1
         single_coalitions = [coalition for coalition in coalition_list if len(coalition) == 1]
@@ -185,14 +185,18 @@ class Environment:
         for single_coalition in single_coalitions:
             graph[str(single_coalition)] = dict()
             for evader in self.active_evaders:
-                if value_matrix[(evader, single_coalition)] != -1:
+                if value_matrix[(evader, single_coalition)] > 0:
                     graph[str(single_coalition)][self.evader_str[evader]] = (1, value_matrix[(evader, single_coalition)])
         for evader in self.active_evaders:
             graph[self.evader_str[evader]] = dict()
             graph[self.evader_str[evader]]["Si"] = (1, 0)
         graph["Si"] = dict()
-        flow = minCostMaxFlow_implemented.SuccessiveShortestPath(graph, "So", "Si")
 
+        if self.count % 1000 == 0:
+            self.flow = minCostMaxFlow_implemented.SuccessiveShortestPath(graph, "So", "Si")
+        
+        flow = self.flow
+        print("Flow1:", flow)
         matched_pursuers = []
         matched_evaders = []
         # FIXED: HUGE ERROR HERE: See we need to make those combinations of pursuers and evaders move to their respective intercept points, whose flow value is 1 ONLY, the rest should remain still!!
@@ -234,15 +238,16 @@ class Environment:
         for dual_coalition in dual_coalitions:
             graph_2[str(dual_coalition)] = dict()
             for evader in self.active_evaders:
-                if value_matrix[(evader, dual_coalition)] != -1:
+                if value_matrix[(evader, dual_coalition)] > 0:
                     graph_2[str(dual_coalition)][self.evader_str[evader]] = (1, value_matrix[(evader, dual_coalition)])
         for evader in self.active_evaders:
             graph_2[self.evader_str[evader]] = dict()
             graph_2[self.evader_str[evader]]["Si"] = (1, 0)
         graph_2["Si"] = dict()
-
-        flow_2 = minCostMaxFlow_implemented.SuccessiveShortestPath(graph_2, "So", "Si")
-        print(flow_2)
+        if self.count % 1000 == 0:
+            self.flow2 = minCostMaxFlow_implemented.SuccessiveShortestPath(graph_2, "So", "Si")
+        flow_2 = self.flow2
+        print("FLOW2:", flow_2)
         for (start, stop), value in flow_2.items():
             if value == 1:
                 if start is not "So" and stop is not "Si" and start is not "Si" and start not in self.str_evader.keys():
@@ -263,31 +268,50 @@ class Environment:
                         vel = stop.heading_velocity(points_matrix[(stop, start)])
                         stop.update_pos(stop.position+self.timestep*vel)
 
-        print("MATCHED PURSUERS:", matched_pursuers)
-        tripple_coalitions = [coalition for coalition in coalition_list if (len(coalition) == 3 and coalition[0] not in matched_pursuers and coalition[1] not in matched_pursuers and coalition[2] not in matched_pursuers)]
-        graph_3 = dict()
-        for tripple_coalition in tripple_coalitions:
-            for evader in self.active_evaders:
-                if value_matrix[(evader, tripple_coalition)] != -1 and evader not in matched_evaders:
-                    graph_3[dual_coalition][evader] = (1, value_matrix[(evader, tripple_coalition)])
-        flow_3 = localSearchMaximum.localSearchMaximum(graph_3, set())
-
-        for start, stop in flow_3:
-            if start[0] not in matched_pursuers:
-                matched_pursuers.append(start[0])
-            if start[1] not in matched_pursuers:
-                matched_pursuers.append(start[1])
-            if start[2] not in matched_pursuers:
-                matched_pursuers.append(start[2])
-            if stop not in matched_evaders:
-                matched_evaders.append(stop)
-            for pursuer_idx in start:
-                pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
-                self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
-                if stop in self.active_evaders:
-                    vel = stop.heading_velocity(points_matrix[(stop, start)])
-                    stop.update_pos(stop.position+self.timestep*vel)
         
+
+        print("MATCHED PURSUERS:", matched_pursuers)
+        triple_coalitions = [coalition for coalition in coalition_list if (len(coalition) == 3 and coalition[0] not in matched_pursuers and coalition[1] not in matched_pursuers and coalition[2] not in matched_pursuers)]
+        graph_3 = dict()
+        graph_3["So"] = dict()
+        for triple_coalition in triple_coalitions:
+            graph_3["So"][str(triple_coalition)] = (1, 0)
+        for triple_coalition in triple_coalitions:
+            graph_3[str(triple_coalition)] = dict()
+            for evader in self.active_evaders:
+                if value_matrix[(evader, triple_coalition)] > 0:
+                    graph_3[str(triple_coalition)][self.evader_str[evader]] = (1, value_matrix[(evader, triple_coalition)])
+        for evader in self.active_evaders:
+            graph_3[self.evader_str[evader]] = dict()
+            graph_3[self.evader_str[evader]]["Si"] = (1, 0)
+        graph_3["Si"] = dict()
+        if self.count % 1000 == 0:
+            self.flow3 = minCostMaxFlow_implemented.SuccessiveShortestPath(graph_3, "So", "Si")
+        flow_3 = self.flow3
+        print("FLOW3:", flow_3)
+        for (start, stop), value in flow_3.items():
+            if value == 1:
+                if start is not "So" and stop is not "Si" and start is not "Si" and start not in self.str_evader.keys():
+                    start = eval(start)
+                if stop in self.str_evader.keys():
+                    stop = self.str_evader[stop]
+                if type(start) is tuple and start[0] not in matched_pursuers:
+                    matched_pursuers.append(int(start[0]))
+                if type(start) is tuple and start[1] not in matched_pursuers:
+                    matched_pursuers.append(int(start[1]))
+                if type(start) is tuple and start[2] not in matched_pursuers:
+                    matched_pursuers.append(int(start[2]))
+                if stop not in matched_evaders:
+                    matched_evaders.append(stop)
+                if start in triple_coalitions and stop in self.active_evaders:
+                    for pursuer_idx in start:
+                        pursuer_velocity = self.pursuers[pursuer_idx].heading_velocity(points_matrix[(stop, start)])
+                        self.pursuers[pursuer_idx].update_pos(self.pursuers[pursuer_idx].position + self.timestep*pursuer_velocity)
+                    if stop in self.active_evaders:
+                        vel = stop.heading_velocity(points_matrix[(stop, start)])
+                        stop.update_pos(stop.position+self.timestep*vel)
+        
+        self.count += 1
         return False
     
     def valueFunctionMatrix(self, max_coalition_size=3):
