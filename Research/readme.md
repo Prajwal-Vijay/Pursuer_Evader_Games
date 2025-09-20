@@ -265,6 +265,9 @@ The simulation produces real-time 3D plots showing:
 - **Current positions** with capture radius indicators
 - **Status information** (step count, active/captured evaders)
 
+### Demo Video
+
+
 ### Performance Analysis
 
 ```python
@@ -339,7 +342,6 @@ This implementation has significant applications in:
 
 ### 3. **Game Theory Research**
 - Coalition formation mechanisms
-- Nash equilibrium computation
 - Mechanism design
 - Auction theory applications
 
@@ -358,19 +360,15 @@ This implementation has significant applications in:
 ## Future Enhancements
 
 ### Planned Features
-- [ ] Support for non-uniform capture radii
-- [ ] Dynamic coalition reformation
 - [ ] Partial information scenarios  
 - [ ] Obstacle avoidance integration
 - [ ] Machine learning-based strategy optimization
 - [ ] Distributed computation capabilities
 
 ### Research Extensions
+- [ ] Calculation of value functions for 1 pursuer vs n evaders
 - [ ] Stochastic differential games
 - [ ] Multi-objective optimization
-- [ ] Robust control under uncertainty
-- [ ] Hierarchical game structures
-- [ ] Communication-constrained scenarios
 
 ## Mathematical Notation
 
@@ -422,8 +420,7 @@ This research code is provided for academic and research purposes. Please cite a
 
 ## Contact
 
-For research collaboration or technical questions regarding this implementation, please refer to the associated research publications or contact the development team.
-
+For research collaboration or technical questions regarding this implementation, please contact ee23b057@smail.iitm.ac.in
 ---
 
 *This README provides a comprehensive overview of the matching-based capture strategies implementation. For detailed mathematical proofs and extended theoretical analysis, please refer to the academic papers in the `/papers` directory.*
