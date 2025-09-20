@@ -29,6 +29,6 @@ EV3_Controller - A ROS-based pipeline integrating an 8-camera OptiTrack system f
 
 MEG_Python - Python simulations of pursuit-evasion scenarios. Explores strategy development for the pursuit team (1 pursuer vs. n evaders), combining weighted averages of optimal headings and nearest-evader pursuit tactics.
 
-Research - The current work I am pursuing, where I am trying to come up with an algorithm to perform weighted matching of the pursuers to evaders.
+Research - The Main Research work that I have been pursuing.
 ## Current Work
 Investigating matching-based strategies for pursuers.
