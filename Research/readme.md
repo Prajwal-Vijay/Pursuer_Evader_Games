@@ -64,14 +64,10 @@ Consider a 3D heterogeneous multi-player system with:
 ### Game Objectives
 
 **Evaders**: 
-```
-min_{u_e} max_{u_p} min{t : e_j(t) ∈ T, ∀τ ∈ [0,t], ||e_j(τ) - p_i(τ)|| > r_c}
-```
+The Evasion team tries to send as many evaders as possible into the Target region, or get as close as possible to it.
 
 **Pursuers**:
-```
-max_{u_p} min_{u_e} min{t : ||e_j(t) - p_i(t)|| ≤ r_c}
-```
+The pursuit team aims to caputure as many evaders as possible before they enter the goal region, while trying to maximize the distance at which the evaders are caught.
 
 ## Key Innovations
 
@@ -85,6 +81,7 @@ The algorithm considers pursuer coalitions of varying sizes:
 - **1v1**: Single pursuer vs single evader
 - **2v1**: Two-pursuer coalition vs single evader  
 - **3v1**: Three-pursuer coalition vs single evader
+![Uploading image.png…]()
 
 ### 3. Boundary of Evasion Space (BES)
 
@@ -160,7 +157,7 @@ Given:
 - Set of active evaders `E = {e_1, e_2, ..., e_m}`
 - Value function weights `w(C_i, e_j)`
 
-Find maximum weight matching:
+Find the maximum cardinality matching, and among those matchings which have the maximum cardinality, try to maximize the sum of weights:
 ```
 max ∑_{(C_i,e_j)∈M} w(C_i, e_j)
 ```
@@ -184,7 +181,7 @@ The matching problem is formulated as a **weighted bipartite graph** `G = (U ∪
 def solve_game_step():
     # Step 1: Compute value function matrix
     value_matrix, points_matrix = compute_value_functions()
-    
+    # Since finding the entire optimal matching is an NP Hard problem, we need to solve it this approximation.
     # Step 2: Solve 1v1 matching using min-cost max-flow
     matching_1v1 = min_cost_max_flow(single_coalitions, evaders, value_matrix)
     
@@ -196,18 +193,6 @@ def solve_game_step():
     
     # Step 5: Execute optimal strategies
     execute_strategies(matchings, points_matrix)
-```
-
-### Coalition Formation Algorithm
-
-```python
-def form_coalitions(pursuers, max_size=3):
-    coalitions = []
-    for size in range(1, max_size + 1):
-        for coalition in combinations(pursuers, size):
-            if all_available(coalition):
-                coalitions.append(coalition)
-    return coalitions
 ```
 
 ### Value Function Optimization
@@ -245,8 +230,7 @@ def compute_value_function(coalition, evader):
 - Capture success rate
 - Average capture time
 - Trajectory optimality measures
-- Coalition effectiveness analysis
-
+  
 ### Configurable Parameters
 - Number of pursuers and evaders
 - Agent speeds and capabilities
@@ -256,18 +240,6 @@ def compute_value_function(coalition, evader):
 
 ## Demo Section
 
-### Quick Start Demo
-
-```python
-# Run basic simulation
-python Simulation_main.py
-```
-
-This will initialize a default scenario with:
-- 3 pursuers at positions: [[0,0,12], [26,0,12], [15,13,12]]
-- 2 evaders at positions: [[15,0,12], [16,7,12]]
-- Pursuer speeds: [1.5, 1.5, 1.5]
-- Evader speeds: [1.0, 1.0]
 
 ### Custom Scenario Setup
 
