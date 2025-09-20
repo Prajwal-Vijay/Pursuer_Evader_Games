@@ -418,8 +418,7 @@ This implementation has significant applications in:
 
 This research code is provided for academic and research purposes. Please cite appropriately if used in publications.
 
-## Contact
-
+## Contact: 
 For research collaboration or technical questions regarding this implementation, please contact ee23b057@smail.iitm.ac.in
 ---
 
