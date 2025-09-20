@@ -1,4 +1,5 @@
 # Matching-Based Capture Strategies for 3D Heterogeneous Multi-Player Reach-Avoid Differential Games
+<img width="1024" height="1024" alt="image (1)" src="https://github.com/user-attachments/assets/b1f5382d-5aaf-405f-8024-b0dbfbe6d81e" />
 
 ## Overview
 
