@@ -5,6 +5,8 @@
 
 This repository implements a novel approach to solving **3D heterogeneous multi-player reach-avoid differential games** using **matching-based capture strategies** with **weighted value functions**. The implementation extends the traditional matching algorithms by incorporating value functions as weights, providing an improvement over existing literature in the field of pursuit-evasion games.
 
+This repository also presents an exhaustive python simulation framework for pursuer evader differential games.
+
 ## Table of Contents
 
 1. [Theoretical Background](#theoretical-background)
