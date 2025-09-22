@@ -242,6 +242,7 @@ def compute_value_function(coalition, evader):
 
 ## Demo Section
 
+[Demo of 3 Pursuers vs 2 Evaders](https://github.com/user-attachments/assets/d506ad67-62d8-40cb-b909-94136546ba34)
 
 ### Custom Scenario Setup
 
