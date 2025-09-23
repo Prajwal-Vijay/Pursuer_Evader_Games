@@ -83,7 +83,6 @@ The algorithm considers pursuer coalitions of varying sizes:
 - **1v1**: Single pursuer vs single evader
 - **2v1**: Two-pursuer coalition vs single evader  
 - **3v1**: Three-pursuer coalition vs single evader
-![Uploading image.png…]()
 
 ### 3. Boundary of Evasion Space (BES)
 
