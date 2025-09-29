@@ -115,27 +115,6 @@ Where `α_{ij} = v_p,i / v_e,j` is the speed ratio.
 
 4. **Simulation_main.py**: Main execution script with initialization
 
-### System Architecture Diagram
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Environment   │◄──►│  Value Function  │◄──►│   HJI Solver    │
-│                 │    │   Computation    │    │                 │
-└─────────┬───────┘    └──────────────────┘    └─────────────────┘
-          │
-          ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│ Coalition       │◄──►│ Matching         │◄──►│ Min-Cost        │
-│ Formation       │    │ Algorithm        │    │ Max-Flow        │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-          │
-          ▼
-┌─────────────────┐    ┌──────────────────┐
-│ Agents          │◄──►│ 3D Simulation    │
-│ (P & E)         │    │ & Visualization  │
-└─────────────────┘    └──────────────────┘
-```
-
 ## Mathematical Framework
 
 ### Value Function Computation
