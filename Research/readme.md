@@ -203,7 +203,6 @@ def compute_value_function(coalition, evader):
 ### 3D Visualization
 - Real-time trajectory plotting for all agents
 - Target region visualization (z = 0 plane)
-- Capture radius indicators
 - Dynamic camera positioning
 
 ### Performance Metrics
