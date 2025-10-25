@@ -25,8 +25,6 @@ Game Development: AI behavior for strategy games
 
 ## 📁: Project Structure
 
-EV3_Controller - A ROS-based pipeline integrating an 8-camera OptiTrack system for real-time orientation and localization with LEGO EV3 robots. This closed-loop system provides continuous feedback, allowing robots to adjust their movements based on live positional data.
-
 MEG_Python - Python simulations of pursuit-evasion scenarios. Explores strategy development for the pursuit team (1 pursuer vs. n evaders), combining weighted averages of optimal headings and nearest-evader pursuit tactics.
 
 🔥 **Research** - The Main Research work that I have been pursuing.
